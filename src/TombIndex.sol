@@ -60,6 +60,7 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         require(!isFrozen, "Contract is frozen");
         require(id > 0 && id <= 177, "Tomb out of bounds");
         tombs[id] = tomb;
+        emit tombUpdated(id);
     }
 
     function setImageURI(string memory _url) public onlyOwner {
@@ -80,10 +81,10 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         require(tomb.weight != 0, "Tomb doesn't exist");
         return abi.encodePacked('{"name":"',tombName(id, tomb),
                 '","image":"',
-                imageURI, toString(id),
+                imageURI, u256toString(id),
              '.png", "attributes":[{"trait_type":"House","value":"',
                 Houses[tomb.house], 
-                '"},{"trait_type":"Weight","value":', toString(tomb.weight), '}]'
+                '"},{"trait_type":"Weight","value":', u256toString(tomb.weight), '}]'
              , '}');
     }
 
@@ -105,10 +106,9 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
     }
 
 
-    function toString(uint256 value) internal pure returns (string memory) {
-    // Inspired by OraclizeAPI's implementation - MIT license
-    // https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
-
+    function u256toString(uint256 value) internal pure returns (string memory) {
+        // Inspired by OraclizeAPI's implementation - MIT license
+        // https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
         if (value == 0) {
             return "0";
         }
