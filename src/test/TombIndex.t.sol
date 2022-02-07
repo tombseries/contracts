@@ -40,7 +40,7 @@ contract TombContractTest is DSTest {
     }
 
     function testTerrainTokenURI() public {
-        string memory uri = TombContract.tokenURI(111);
+        bytes memory uri = TombContract.jsonForTomb(111);
         emit log(string(uri));
     }
 }

@@ -4,8 +4,8 @@ pragma solidity ^0.8.10;
 import "solmate/tokens/ERC721.sol";
 import "solmate/utils/SafeTransferLib.sol";
 import "openzeppelin/access/Ownable.sol";
-import "./RomanNumerals.sol";
 import "base64/base64.sol";
+import "./RomanNumerals.sol";
 
 contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
     string public imageURI;
@@ -24,7 +24,6 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         Houses[House.TERRA] = "TERRA";
         Houses[House.X2] = "X2";
     }
-
 
     struct Tomb {
         string name;
@@ -76,18 +75,20 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         return string(abi.encodePacked("Tomb ", numeral(id), " - ", tomb.name));
     }
 
-    function tokenURI(uint256 id) public view override returns (string memory) {
+    function jsonForTomb(uint256 id) public view returns (bytes memory) {
         Tomb memory tomb = tombs[id];
         require(tomb.weight != 0, "Tomb doesn't exist");
-        return string(abi.encodePacked('data:application/json;base64,', Base64.encode(
-            abi.encodePacked('{"name":"',tombName(id, tomb),
+        return abi.encodePacked('{"name":"',tombName(id, tomb),
                 '","image":"',
                 imageURI, toString(id),
              '.png", "attributes":[{"trait_type":"House","value":"',
                 Houses[tomb.house], 
                 '"},{"trait_type":"Weight","value":', toString(tomb.weight), '}]'
-             , '}')
-        )));
+             , '}');
+    }
+
+    function tokenURI(uint256 id) public view override returns (string memory) {
+        return string(abi.encodePacked('data:application/json;base64,', Base64.encode(jsonForTomb(id))));
     }
 
     function supportsInterface(bytes4 interfaceId)
