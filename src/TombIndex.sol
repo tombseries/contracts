@@ -85,6 +85,13 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         emit TombUpdated(id);
     }
 
+    function saveTombs(uint256[] calldata ids, Tomb[] calldata tombs) public onlyOwner {
+        require(ids.length == tombs.length, "invalid input");
+        for (uint256 i = 0; i < tombs.length; i++) {
+            saveTomb(ids[i], tombs[i]);   
+        }
+    }
+
     function setImageURI(string memory _url) public onlyOwner {
         require(!isFrozen, "Contract is frozen");
         imageURI = _url;

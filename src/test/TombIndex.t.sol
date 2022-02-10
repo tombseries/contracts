@@ -79,7 +79,7 @@ contract TombContractTest is DSTest {
     }
 
     function testFailUseOwnerFunction() public {
-        cheats.prank(0xfB843f8c4992EfDb6b42349C35f025ca55742D33);
+        cheats.prank(OtherAddress);
         TombContract.setImageURI("test");
     }
 
@@ -91,4 +91,45 @@ contract TombContractTest is DSTest {
         bytes memory uri = TombContract.jsonForTomb(111);
         emit log(string(uri));
     }
+
+    function testBatchSave() public {
+        cheats.prank(ArtistAddress);
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = 1;
+        ids[1] = 100;
+
+        TombIndex.Tomb[] memory tombs = new TombIndex.Tomb[](2);
+
+        tombs[0] = TombIndex.Tomb({
+            _initialized: true,
+            name: "SAVETEST",
+            weight: 18356125,
+            numberInHouse: 10,
+            house: TombIndex.House.GENESIS,
+            deployment: TombIndex.deployment({
+                _contract: address(ExtNFTContract),
+                tokenID: 0,
+                chainID: 0,
+                deployed: true
+            })
+        });
+
+
+        tombs[1] = TombIndex.Tomb({
+            _initialized: true,
+            name: "100TEST",
+            weight: 18356125,
+            numberInHouse: 10,
+            house: TombIndex.House.GENESIS,
+            deployment: TombIndex.deployment({
+                _contract: address(ExtNFTContract),
+                tokenID: 0,
+                chainID: 0,
+                deployed: true
+            })
+        });
+
+        TombContract.saveTombs(ids, tombs);
+    }
+
 }
