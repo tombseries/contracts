@@ -52,22 +52,25 @@ contract TombContractTest is DSTest {
 
         uint256[] memory ids = new uint256[](1);
         ids[0] = 21;
+
+        string[] memory names = new string[](1);
+        names[0] = "EQUINOX";
+
         TombIndex.Tomb[] memory tombs = new TombIndex.Tomb[](1);
         tombs[0] = TombIndex.Tomb({
             _initialized: true,
-            name: "EQUINOX",
             weight: 18356125,
             numberInHouse: 10,
-            house: TombIndex.House.RONIN,
+            house: 7,
             deployment: TombIndex.deployment({
-                _contract: address(ExtNFTContract),
+                hostContract: address(ExtNFTContract),
                 tokenID: 0,
                 chainID: 1,
                 deployed: true
             })
         });
 
-        TombContract.saveTombs(ids, tombs);
+        TombContract.saveTombs(ids, names, tombs);
         TombContract.transferOwnership(ArtistAddress);
     }
 
@@ -76,7 +79,7 @@ contract TombContractTest is DSTest {
     }
 
     function testExternalOwnerOf() public {
-        assertEq(TombContract.getTombOwner(21), OtherAddress);
+        assertEq(TombContract.ownerOfTomb(21), OtherAddress);
     }
 
     function testSetURI() public {
@@ -102,18 +105,21 @@ contract TombContractTest is DSTest {
         cheats.prank(ArtistAddress);
         uint256[] memory ids = new uint256[](2);
         ids[0] = 1;
-        ids[1] = 100;
+        ids[1] = 177;
+
+        string[] memory names = new string[](2);
+        names[0] = "SAVETEST";
+        names[1] = "EQUINOX";
 
         TombIndex.Tomb[] memory tombs = new TombIndex.Tomb[](2);
 
         tombs[0] = TombIndex.Tomb({
             _initialized: true,
-            name: "SAVETEST",
             weight: 18356125,
             numberInHouse: 10,
-            house: TombIndex.House.GENESIS,
+            house: 0,
             deployment: TombIndex.deployment({
-                _contract: address(ExtNFTContract),
+                hostContract: address(ExtNFTContract),
                 tokenID: 0,
                 chainID: 1,
                 deployed: true
@@ -123,19 +129,18 @@ contract TombContractTest is DSTest {
 
         tombs[1] = TombIndex.Tomb({
             _initialized: true,
-            name: "100TEST",
             weight: 18356125,
             numberInHouse: 10,
-            house: TombIndex.House.GENESIS,
+            house: 0,
             deployment: TombIndex.deployment({
-                _contract: address(ExtNFTContract),
+                hostContract: address(ExtNFTContract),
                 tokenID: 0,
                 chainID: 1,
                 deployed: true
             })
         });
 
-        TombContract.saveTombs(ids, tombs);
+        TombContract.saveTombs(ids, names, tombs);
     }
 
 }
