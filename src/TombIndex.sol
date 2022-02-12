@@ -98,7 +98,7 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
     }
 
     function tombName(uint256 id, Tomb memory tomb) private view returns (string memory) {
-        return string(abi.encodePacked("Tomb ", numeral(id), unicode' – ', tomb.name));
+        return string(abi.encodePacked("Tomb ", numeral(id), unicode' — ', tomb.name));
     }
 
     function ordinalString(uint256 number) internal pure returns (string memory) {
