@@ -170,4 +170,9 @@ contract TombContractTest is DSTest {
         TombContract.saveTombs(ids, names, tombs);
     }
 
+    function testFailIsFrozen() public {
+        cheats.prank(ArtistAddress);
+        TombContract.freezeContract();
+        TombContract.setImageURI("test");
+    }
 }
