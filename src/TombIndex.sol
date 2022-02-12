@@ -97,11 +97,8 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         isFrozen = true;
     }
 
-    // Solidity's string type doesn't support emdashes; this is the unicode
-    // value for an embash
-    int private constant emdash = 0xe28093;
     function tombName(uint256 id, Tomb memory tomb) private view returns (string memory) {
-        return string(abi.encodePacked("Tomb ", numeral(id), ' ', emdash, ' ', tomb.name));
+        return string(abi.encodePacked("Tomb ", numeral(id), unicode' – ', tomb.name));
     }
 
     function ordinalString(uint256 number) internal pure returns (string memory) {
