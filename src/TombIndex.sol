@@ -60,13 +60,13 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         _saveTomb(111, Tomb({
             _initialized: true,
             name: "TERRAIN",
-            weight: 18356125,
+            weight: 19454274,
             numberInHouse: 10,
             house: House.RONIN,
             deployment: deployment({
                 _contract: address(this),
                 tokenID: 111,
-                chainID: 0,
+                chainID: 1,
                 deployed: true
             })
         }));
@@ -104,21 +104,47 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         return string(abi.encodePacked("Tomb ", numeral(id), ' ', emdash, ' ', tomb.name));
     }
 
+    function ordinalString(uint256 number) internal pure returns (string memory) {
+        if (number <= 0) {
+            return "0";
+        }
+
+        string memory suffix = "th";
+        uint256 j = number % 10;
+        uint256 k = number % 100;
+
+        if (j == 1 && k != 11) {
+            suffix = "st";
+        } else if (j == 2 && k != 12) {
+            suffix = "nd";
+        } else if (j == 3 && k != 13) {
+            suffix = "rd";
+        }
+
+        return string(abi.encodePacked(u256toString(number), suffix));
+    }
+
+    // TERRAIN is the 111th Tomb in the Tomb Series. It is the 10th tomb in the RONIN house, at a weight of 22.862.184.
+    function tombDescription(uint256 id, Tomb memory tomb) private view returns (string memory) {
+        return string(abi.encodePacked(tomb.name, " is the ", ordinalString(id), " Tomb in the Tomb Series. It is the ", ordinalString(tomb.numberInHouse), " Tomb in the ",
+            houses[tomb.house], " house, at a weight of ", periodSeparatedNum(tomb.weight), "."));
+    }
+
     function getTombOwner(uint256 id) public view returns (address) {
         Tomb memory tomb = tombByID[id];
         require(tomb._initialized, "Tomb doesn't exist");
-        require(tomb.deployment.chainID == 0, "Can only check ownership value for Ethereum mainnet based Tombs");
+        require(tomb.deployment.chainID == 1, "Can only check ownership value for Ethereum mainnet based Tombs");
         return IERC721OwnerOf(tomb.deployment._contract).ownerOf(tomb.deployment.tokenID);
     }
 
-    function makeAttribute(string memory name, string memory value, bool isJSONString) private view returns (string memory) {
+    function makeAttribute(string memory name, string memory value, bool isJSONString) private pure returns (string memory) {
         string memory strDelimiter = '';
         if (isJSONString) {
             strDelimiter = '"';
         }
 
         return string(abi.encodePacked(
-            '{"trait_type":"', name, '", "value":', strDelimiter, value, strDelimiter, '}'
+            '{"trait_type":"', name, '","value":', strDelimiter, value, strDelimiter, '}'
         ));
     }
 
@@ -126,8 +152,9 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         Tomb memory tomb = tombByID[id];
         require(tomb._initialized, "Tomb doesn't exist");
         return abi.encodePacked('{"name":"',tombName(id, tomb),
+                '","description":"', tombDescription(id, tomb),
                 '","image":"',
-                imageURI, u256toString(id), '.png", "attributes":[', 
+                imageURI, u256toString(id), '.png","attributes":[', 
                 makeAttribute('House', houses[tomb.house], true), ',',
                 makeAttribute('Weight', u256toString(tomb.weight), false), ',',
                 makeAttribute('Number in house', u256toString(tomb.numberInHouse), false),
@@ -151,6 +178,29 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
             interfaceId == 0x01ffc9a7; // ERC165 Interface ID for ERC721Metadata
     }
 
+    function concatDotParts(string memory base, uint256 part, bool needsDot) internal pure returns (string memory) {  
+        string memory glue = ".";
+        if (!needsDot) {
+            glue = "";
+        }
+
+        return string(abi.encodePacked(u256toString(part), glue, base));
+    }
+
+    function periodSeparatedNum(uint256 value) internal pure returns (string memory) {
+        string memory result = "";
+        uint128 index;
+        while(value > 0) {
+            uint256 part = value % 10;
+            bool needsDot = index != 0 && index % 3 == 0;
+
+            result = concatDotParts(result, part, needsDot);
+            value = value / 10;
+            index += 1;
+        }
+ 
+        return result;
+    }
 
     function u256toString(uint256 value) internal pure returns (string memory) {
         // Inspired by OraclizeAPI's implementation - MIT license
@@ -170,6 +220,7 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
             buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
             value /= 10;
         }
+
         return string(buffer);
     }
 }

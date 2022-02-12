@@ -62,7 +62,7 @@ contract TombContractTest is DSTest {
             deployment: TombIndex.deployment({
                 _contract: address(ExtNFTContract),
                 tokenID: 0,
-                chainID: 0,
+                chainID: 1,
                 deployed: true
             })
         });
@@ -115,7 +115,7 @@ contract TombContractTest is DSTest {
             deployment: TombIndex.deployment({
                 _contract: address(ExtNFTContract),
                 tokenID: 0,
-                chainID: 0,
+                chainID: 1,
                 deployed: true
             })
         });
@@ -130,7 +130,7 @@ contract TombContractTest is DSTest {
             deployment: TombIndex.deployment({
                 _contract: address(ExtNFTContract),
                 tokenID: 0,
-                chainID: 0,
+                chainID: 1,
                 deployed: true
             })
         });
