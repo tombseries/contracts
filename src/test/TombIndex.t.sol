@@ -49,7 +49,11 @@ contract TombContractTest is DSTest {
         ExtNFTContract = new ExampleRonin();
         ExtNFTContract.mint2();
         TombContract = new TombIndex("https://tombseri.es/img/", ArtistAddress);
-        TombContract.saveTomb(21, TombIndex.Tomb({
+
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 21;
+        TombIndex.Tomb[] memory tombs = new TombIndex.Tomb[](1);
+        tombs[0] = TombIndex.Tomb({
             _initialized: true,
             name: "EQUINOX",
             weight: 18356125,
@@ -61,7 +65,9 @@ contract TombContractTest is DSTest {
                 chainID: 0,
                 deployed: true
             })
-        }));
+        });
+
+        TombContract.saveTombs(ids, tombs);
         TombContract.transferOwnership(ArtistAddress);
     }
 

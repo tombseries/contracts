@@ -14,10 +14,6 @@ interface IERC721OwnerOf {
 contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
     string public imageURI;
     bool public isFrozen;
-    
-    // Solidity's string type doesn't support emdashes; this is the unicode
-    // value for an embash
-    int private constant emdash = 0xe28093;
 
     event TombUpdated(uint256 id);
     enum House { GENESIS, LUX, X2, SHADOW, COMETS, DEVASTATORS, TERRA, RONIN }
@@ -61,7 +57,7 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
     }
 
     function deployRonin(address artistAddress) internal onlyOwner {
-        saveTomb(111, Tomb({
+        _saveTomb(111, Tomb({
             _initialized: true,
             name: "TERRAIN",
             weight: 18356125,
@@ -78,17 +74,17 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         _mint(artistAddress, 111);
     }
 
-    function saveTomb(uint256 id, Tomb memory tomb) public onlyOwner {
-        require(!isFrozen, "Contract is frozen");
+    function _saveTomb(uint256 id, Tomb memory tomb) private {
         require(id > 0 && id <= 177, "Tomb out of bounds");
         tombByID[id] = tomb;
         emit TombUpdated(id);
     }
 
     function saveTombs(uint256[] calldata ids, Tomb[] calldata tombs) public onlyOwner {
+        require(!isFrozen, "Contract is frozen");
         require(ids.length == tombs.length, "invalid input");
         for (uint256 i = 0; i < tombs.length; i++) {
-            saveTomb(ids[i], tombs[i]);   
+            _saveTomb(ids[i], tombs[i]);   
         }
     }
 
@@ -101,6 +97,9 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         isFrozen = true;
     }
 
+    // Solidity's string type doesn't support emdashes; this is the unicode
+    // value for an embash
+    int private constant emdash = 0xe28093;
     function tombName(uint256 id, Tomb memory tomb) private view returns (string memory) {
         return string(abi.encodePacked("Tomb ", numeral(id), ' ', emdash, ' ', tomb.name));
     }
