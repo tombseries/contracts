@@ -7,7 +7,7 @@ import "openzeppelin/access/Ownable.sol";
 import "base64/base64.sol";
 import "./RomanNumerals.sol";
 
-contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
+contract TombIndex is ERC721, Ownable {
     string public imageURI;
     bool public isFrozen;
 
@@ -38,6 +38,15 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
     ) ERC721("Tomb Series", "TOMB") {
         _deployRonin(artistAddress);
         imageURI = _imageURI;
+    }
+
+    function freezeContract() public onlyOwner {
+        isFrozen = true;
+    }
+
+    modifier notFrozen() {
+        require(!isFrozen, "Contract is frozen");
+        _;
     }
 
     function _deployRonin(address artistAddress) internal onlyOwner {
@@ -77,17 +86,8 @@ contract TombIndex is ERC721, Ownable, RomanNumeralSubset {
         imageURI = _url;
     }
 
-    function freezeContract() public onlyOwner {
-        isFrozen = true;
-    }
-
-    modifier notFrozen() {
-        require(!isFrozen, "Contract is frozen");
-        _;
-    }
-
     function _tombName(uint8 id) internal view returns (string memory) {
-        return string(abi.encodePacked("Tomb ", numeral(id), unicode' — ', tombNameByID[id]));
+        return string(abi.encodePacked("Tomb ", RomanNumeral.ofNum(id), unicode' — ', tombNameByID[id]));
     }
 
     function _ordinalString(uint8 number) internal pure returns (string memory) {
