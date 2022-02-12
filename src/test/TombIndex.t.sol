@@ -101,6 +101,33 @@ contract TombContractTest is DSTest {
         emit log(string(uri));
     }
 
+    function testSingleSave() public {
+        cheats.prank(ArtistAddress);
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 177;
+
+        string[] memory names = new string[](1);
+        names[0] = "SAVETEST";
+
+        TombIndex.Tomb[] memory tombs = new TombIndex.Tomb[](1);
+
+        tombs[0] = TombIndex.Tomb({
+            _initialized: true,
+            weight: 18356125,
+            numberInHouse: 10,
+            house: 0,
+            deployment: TombIndex.deployment({
+                hostContract: address(ExtNFTContract),
+                tokenID: 0,
+                chainID: 1,
+                deployed: true
+            })
+        });
+
+        TombContract.saveTombs(ids, names, tombs);
+    }
+
+
     function testBatchSave() public {
         cheats.prank(ArtistAddress);
         uint256[] memory ids = new uint256[](2);
