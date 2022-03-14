@@ -42,8 +42,11 @@ import "solmate/utils/SafeTransferLib.sol";
 import "openzeppelin/access/Ownable.sol";
 
 contract Ronin is ERC721, Ownable {
+    error InvalidTomb();
+    error AlreadyMinted();
+
     ERC721 IndexContract;
-    uint8 internal _tombID;
+    uint8 internal immutable _tombID;
     bool public tombMinted = false;
     address internal _tombArtist = 0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46;
 
@@ -53,12 +56,13 @@ contract Ronin is ERC721, Ownable {
     }
 
     function tokenURI(uint256 id) public view override returns (string memory) {
+        if (id != _tombID) revert InvalidTomb();
         require(id == _tombID, "Invalid token ID");
         return IndexContract.tokenURI(id);
     }
 
     function mint() public onlyOwner {
-        require(!tombMinted, "Tomb already minted");
+        if (tombMinted) revert AlreadyMinted();
         _mint(msg.sender, _tombID);
         tombMinted = true;
     }
@@ -70,7 +74,7 @@ contract Ronin is ERC721, Ownable {
         address receiver,
         uint256 royaltyAmount
     ) {
-        require(_tokenId == _tombID, "Invalid token ID");
+        if (_tokenId != _tombID) revert InvalidTomb();
         receiver = _tombArtist;
         royaltyAmount = _salePrice / 10;
     }
