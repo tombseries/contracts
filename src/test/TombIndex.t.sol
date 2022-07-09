@@ -7,35 +7,43 @@ import "../TombIndex.sol";
 import "base64/base64.sol";
 
 interface CheatCodes {
-  function prank(address) external;
-  function ffi(string[] calldata) external returns (bytes memory);
+    function prank(address) external;
+
+    function ffi(string[] calldata) external returns (bytes memory);
 }
 
 contract ExampleRonin is ERC721 {
-    constructor() ERC721("Ronin", "RNIN") {
-    }
+    constructor() ERC721("Ronin", "RNIN") {}
 
     function tokenURI(uint256 id) public view override returns (string memory) {
         return "";
     }
-    
+
     address OtherAddress = 0xfB843f8c4992EfDb6b42349C35f025ca55742D33;
 
     function mint2() public {
         _mint(OtherAddress, 0);
     }
-
 }
-
 
 contract TombContractTest is DSTest {
     CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
-    ExampleRonin internal ExtNFTContract = ExampleRonin(0x517e643F53EB3622Fd2c3A12C6BFde5E7Bc8D5ca);
+    ExampleRonin internal ExtNFTContract =
+        ExampleRonin(0x517e643F53EB3622Fd2c3A12C6BFde5E7Bc8D5ca);
     address ArtistAddress = 0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46;
     address OtherAddress = 0xfB843f8c4992EfDb6b42349C35f025ca55742D33;
     TombIndex internal TombContract;
 
-    enum House { GENESIS, LUX, X2, SHADOW, COMETS, DEVASTATORS, TERRA, RONIN }
+    enum House {
+        GENESIS,
+        LUX,
+        X2,
+        SHADOW,
+        COMETS,
+        DEVASTATORS,
+        TERRA,
+        RONIN
+    }
     struct Tomb {
         bool _active;
         string name;
@@ -127,7 +135,6 @@ contract TombContractTest is DSTest {
         TombContract.saveTombs(ids, names, tombs);
     }
 
-
     function testBatchSave() public {
         cheats.prank(ArtistAddress);
         uint256[] memory ids = new uint256[](2);
@@ -152,7 +159,6 @@ contract TombContractTest is DSTest {
                 deployed: true
             })
         });
-
 
         tombs[1] = TombIndex.Tomb({
             _initialized: true,
