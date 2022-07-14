@@ -58,9 +58,10 @@ contract TombMarker is Ownable, ERC721 {
   constructor(
     address _signer,
     string memory _baseURI,
-    address _indexContract
+    address _indexContract,
+    address _royaltyDestination
   ) ERC721("Tomb Index Marker", "TombMarker") {
-    royaltyDestination = msg.sender;
+    royaltyDestination = _royaltyDestination;
     signer = _signer;
     baseURI = _baseURI;
     indexContract = ERC721(_indexContract);
