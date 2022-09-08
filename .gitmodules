@@ -13,3 +13,6 @@
 [submodule "lib/forge-std"]
 	path = lib/forge-std
 	url = https://github.com/brockelmore/forge-std
+[submodule "lib/gsn"]
+	path = lib/gsn
+	url = https://github.com/opengsn/gsn
