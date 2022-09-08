@@ -22,7 +22,7 @@
 //    5@@@@@5                .7#@@@@@@@@@@&! .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@G  &@@@@@@@@@@&           .J&@@@@@@@@@@@@5
 //    ^5YYY5~                   .!JYYYYY7:    Y5YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYJ~.   ?5YYYYYYY5J.              :7JYYYYYYYY5^
 
-//  __________________________________________________ Tomb Index Markers __________________________________________________
+//  __________________________________________________ Tomb Index Marker ___________________________________________________
 
 // ________________________________________________ Deployed by TERRAIN 2022 _______________________________________________
 
@@ -39,7 +39,7 @@ import "openzeppelin/access/Ownable.sol";
 
 pragma solidity >=0.8.0;
 
-contract TombMarker is Ownable, ERC721 {
+contract IndexMarker is Ownable, ERC721 {
   string public baseURI;
   address public signer;
 
@@ -60,7 +60,7 @@ contract TombMarker is Ownable, ERC721 {
     string memory _baseURI,
     address _indexContract,
     address _royaltyDestination
-  ) ERC721("Tomb Index Marker", "TombMarker") {
+  ) ERC721("Tomb Index Marker", "MKR") {
     royaltyDestination = _royaltyDestination;
     signer = _signer;
     baseURI = _baseURI;

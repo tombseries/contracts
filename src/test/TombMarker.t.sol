@@ -5,12 +5,12 @@ import { DSTest } from "ds-test/test.sol";
 import { Utilities } from "./utils/Utilities.sol";
 import { console } from "./utils/Console.sol";
 import { Vm } from "forge-std/Vm.sol";
-import { TombMarker } from "../TombMarker.sol";
+import { IndexMarker } from "../IndexMarker.sol";
 import { TombIndex } from "../TombIndex.sol";
 
 contract CatTest is DSTest {
   Vm internal immutable vm = Vm(HEVM_ADDRESS);
-  TombMarker internal marker;
+  IndexMarker internal marker;
   TombIndex internal index;
   Utilities internal utils;
   address payable[] internal users;
@@ -21,10 +21,11 @@ contract CatTest is DSTest {
       "https://tombseri.es/img/",
       0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46
     );
-    marker = new TombMarker(
+    marker = new IndexMarker(
       0x818d7CA5aa6E964784267aAaEAEab323d5894A86,
       "https://tombseri.es",
-      address(index)
+      address(index),
+      msg.sender
     );
     marker.setMintInformation(true, 1672531199);
     utils = new Utilities();
