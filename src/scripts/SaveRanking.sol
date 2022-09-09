@@ -6,10 +6,6 @@ import "../ShadowDistribution.sol";
 
 contract SaveRanking is Script {
   function run() external {
-    ShadowDistribution shadowDistribution = ShadowDistribution(
-      0xeC0a7349dC663a4C2363E72ee9de5aE24FA01163
-    );
-
     uint256[] memory ids = new uint256[](36);
     address[] memory addrs = new address[](36);
 
@@ -55,6 +51,10 @@ contract SaveRanking is Script {
     addrs[35] = 0xF73FE15cFB88ea3C7f301F16adE3c02564ACa407;
 
     vm.startBroadcast(0x9aaC8cCDf50dD34d06DF661602076a07750941F6);
+    ShadowDistribution shadowDistribution = new ShadowDistribution(
+      0x36086ee1AA2Fe214564f12CA9Ff15C6b136fEC81,
+      0xcC1775Ea6D7F62b4DCA8FAF075F864d3e15Dd0F0
+    );
     shadowDistribution.saveMapping(ids, addrs);
     vm.stopBroadcast();
   }
