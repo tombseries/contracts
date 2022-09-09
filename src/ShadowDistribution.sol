@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import "solmate/utils/SafeTransferLib.sol";
 import "openzeppelin/utils/cryptography/ECDSA.sol";
 import "openzeppelin/access/Ownable.sol";
 
