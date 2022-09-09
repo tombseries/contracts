@@ -44,7 +44,7 @@ contract ShadowDistributionTest is DSTest {
     uint256[] memory ids = new uint256[](1);
     address[] memory addrs = new address[](1);
 
-    ids[0] = 1;
+    ids[0] = 4;
     addrs[0] = Worm;
 
     ShadowDistributionContract.saveMapping(ids, addrs);
@@ -56,70 +56,58 @@ contract ShadowDistributionTest is DSTest {
   function testClaim() public {
     vm.prank(relayer, relayer);
 
-    assertEq(ShadowContract.ownerOf(1), TombCouncil, "owner should be council");
+    assertEq(ShadowContract.ownerOf(4), TombCouncil, "owner should be council");
     ShadowDistributionContract.claimNFT(
-      1,
+      4,
       Worm,
       Worm,
-      hex"ea6bad825c8a0a4a482e7ac4b3698ae3e00f16532b61b70833263d05b01382d964c18acafcbece6146f5b90fe5d1bd2b6e1f1e96fb0996d52df393f0afe535901c"
+      hex"21bdc3e08df19e2f747c2268e853faf9871263f5fa06719efa3831b014a7c38958da6a6bb929e74919e58a69f3167323db748c3b5abb94efb79f838da73c3cdc1c"
     );
-    assertEq(ShadowContract.ownerOf(1), Worm);
+    assertEq(ShadowContract.ownerOf(4), Worm);
   }
 
   function testFailClaimTwice() public {
     vm.prank(relayer, relayer);
 
-    assertEq(ShadowContract.ownerOf(1), TombCouncil, "owner should be council");
+    assertEq(ShadowContract.ownerOf(4), TombCouncil, "owner should be council");
     ShadowDistributionContract.claimNFT(
-      1,
+      4,
       Worm,
       Worm,
-      hex"ea6bad825c8a0a4a482e7ac4b3698ae3e00f16532b61b70833263d05b01382d964c18acafcbece6146f5b90fe5d1bd2b6e1f1e96fb0996d52df393f0afe535901c"
+      hex"21bdc3e08df19e2f747c2268e853faf9871263f5fa06719efa3831b014a7c38958da6a6bb929e74919e58a69f3167323db748c3b5abb94efb79f838da73c3cdc1c"
     );
-    assertEq(ShadowContract.ownerOf(1), Worm);
+    assertEq(ShadowContract.ownerOf(4), Worm);
     ShadowDistributionContract.claimNFT(
-      1,
+      4,
       Worm,
       Worm,
-      hex"ea6bad825c8a0a4a482e7ac4b3698ae3e00f16532b61b70833263d05b01382d964c18acafcbece6146f5b90fe5d1bd2b6e1f1e96fb0996d52df393f0afe535901c"
+      hex"21bdc3e08df19e2f747c2268e853faf9871263f5fa06719efa3831b014a7c38958da6a6bb929e74919e58a69f3167323db748c3b5abb94efb79f838da73c3cdc1c"
     );
   }
 
   function testFailDifferentWallet() public {
     vm.prank(relayer, relayer);
 
-    assertEq(ShadowContract.ownerOf(1), TombCouncil, "owner should be council");
+    assertEq(ShadowContract.ownerOf(4), TombCouncil, "owner should be council");
     ShadowDistributionContract.claimNFT(
-      1,
+      4,
       Worm,
       unauthorizedUser,
-      hex"ea6bad825c8a0a4a482e7ac4b3698ae3e00f16532b61b70833263d05b01382d964c18acafcbece6146f5b90fe5d1bd2b6e1f1e96fb0996d52df393f0afe535901c"
+      hex"21bdc3e08df19e2f747c2268e853faf9871263f5fa06719efa3831b014a7c38958da6a6bb929e74919e58a69f3167323db748c3b5abb94efb79f838da73c3cdc1c"
     );
-    assertEq(ShadowContract.ownerOf(1), Worm);
+    assertEq(ShadowContract.ownerOf(4), Worm);
   }
 
   function testOtherWallet() public {
     vm.prank(relayer, relayer);
 
-    assertEq(ShadowContract.ownerOf(1), TombCouncil, "owner should be council");
+    assertEq(ShadowContract.ownerOf(4), TombCouncil, "owner should be council");
     ShadowDistributionContract.claimNFT(
-      1,
+      4,
       Worm,
       otherWallet,
-      hex"4d2fdb8d221c25a7c5ddaf831fd1a2818b3de2236ed389770aaee6f4776c3fe960e9487af1a65277ddfa1cb6ceb1f854d34c0b24fb3ae32c7f90be69ad90ebba1b"
+      hex"6ca05722ee848ce7815fd08897ac35de44523f95b17f4235522a1e88981378250f109342db0bd113e520ca40449dcc0079de43d9b7bef590d74189a1a713988c1c"
     );
-    assertEq(ShadowContract.ownerOf(1), otherWallet);
-  }
-
-  function testFailWrongWallet() public {
-    vm.prank(relayer, relayer);
-
-    assertEq(ShadowContract.ownerOf(1), TombCouncil, "owner should be council");
-    ShadowDistributionContract.claimNFT(
-      1,
-      Worm,
-      0xF73FE15cFB88ea3C7f301F16adE3c02564ACa407,
-      hex"4d2fdb8d221c25a7c5ddaf831fd1a2818b3de2236ed389770aaee6f4776c3fe960e9487af1a65277ddfa1cb6ceb1f854d34c0b24fb3ae32c7f90be69ad90ebba1b"
-    );
+    assertEq(ShadowContract.ownerOf(4), otherWallet);
   }
 }

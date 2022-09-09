@@ -48,9 +48,9 @@ contract ShadowDistribution is Ownable {
     return
       ECDSA.toEthSignedMessageHash(
         abi.encodePacked(
-          "I am claiming ownership of Shadow #",
+          "This message confirms that this wallet owner has been allocated ownership of Tomb #",
           Strings.toString(tokenID),
-          ", confirming that I want it delivered to this address, and that this address is a Polygon-compatible wallet: ",
+          " in the SHADOW House. Signing this message will initiate a transfer to the following wallet address, which I confirm is Polygon-compatible: ",
           Strings.toHexString(destination)
         )
       );
