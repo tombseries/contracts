@@ -64,6 +64,10 @@ contract WrappedIndexMarker is
   }
 
   function wrap(uint256 tokenId) public {
+    require(
+      tokenId != 0,
+      "WrappedIndexMarker: tokenId 0 is not an Index Marker"
+    );
     indexMarker.transferFrom(msg.sender, address(this), tokenId);
     _mint(msg.sender, tokenId);
   }
