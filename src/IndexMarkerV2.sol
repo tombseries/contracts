@@ -9,7 +9,18 @@ import "openzeppelin-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/extensions/ERC721VotesUpgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
 import "openzeppelin-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import "zora-drops-contracts/interfaces/IOperatorFilterRegistry.sol";
 import "./IRecoveryChildV1.sol";
+import "./utils/IERC173.sol";
+
+/**
+ * note: This contract uses role-based access control. it also has an IERC173
+ * compliant Owner, but this is solely for opensea royalty compatibility. The
+ * Owner is the openseaRoyaltiesManager, which is set by whoever has the
+ * OPENSEA_ROYALTIES_ADMIN_ROLE. The openseaRoyaltiesManager must be a
+ * trusted EOA (not a contract), but the OPENSEA_ROYALTIES_ADMIN_ROLE should
+ * be a multisig or governance contract.
+ */
 
 contract IndexMarkerV2 is
   Initializable,
@@ -18,7 +29,8 @@ contract IndexMarkerV2 is
   EIP712Upgradeable,
   ERC721VotesUpgradeable,
   ERC2981Upgradeable,
-  UUPSUpgradeable
+  UUPSUpgradeable,
+  IERC173 /* required for opensea royalties */
 {
   bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
   bytes32 public constant SET_TOMB_VOTING_WEIGHT_ROLE =
@@ -26,26 +38,37 @@ contract IndexMarkerV2 is
   bytes32 public constant SET_TOMB_CONTRACTS_ROLE =
     keccak256("SET_TOMB_CONTRACTS_ROLE");
   bytes32 public constant SET_ROYALTIES_ROLE = keccak256("SET_ROYALTIES_ROLE");
+  bytes32 public constant UPDATE_MARKET_SETTINGS_ROLE =
+    keccak256("UPDATE_MARKET_SETTINGS_ROLE");
+  bytes32 public constant OPENSEA_ROYALTIES_ADMIN_ROLE =
+    keccak256("OPENSEA_ROYALTIES_ADMIN_ROLE");
 
   uint16 internal constant DEFAULT_TOMB_HOLDER_VOTING_WEIGHT = 30; // 30 votes
   uint96 internal constant DEFAULT_ROYALTY_BPS = 1_000; // 10%
   address payable internal constant TOMB_ARTIST =
     payable(0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46);
 
+  // zora & opensea compatibility
+  IOperatorFilterRegistry immutable operatorFilterRegistry =
+    IOperatorFilterRegistry(0x000000000000AAeB6D7670E522A718067333cd4E);
+  address public marketFilterDAOAddress;
+
   uint96 public royaltyBps;
   IERC721MetadataUpgradeable public indexMarker;
   mapping(address => bool) public isTombContract;
   mapping(address => mapping(uint256 => bool)) public isSingletonTombToken;
   uint16 public tombHolderVotingWeight;
+  address internal openseaRoyaltiesManager;
 
   constructor() {
     _disableInitializers();
   }
 
-  function initialize(address _indexMarker, address payable _royaltyDestination)
-    public
-    initializer
-  {
+  function initialize(
+    address _indexMarker,
+    address payable _royaltyDestination,
+    address _marketFilterDAOAddress
+  ) public initializer {
     __ERC721_init("Wrapped Tomb Index Marker", "WMKR");
     __AccessControl_init();
     __EIP712_init("Wrapped Tomb Index Marker", "1");
@@ -54,8 +77,9 @@ contract IndexMarkerV2 is
     __ERC2981_init();
 
     indexMarker = IERC721MetadataUpgradeable(_indexMarker);
-    tombHolderVotingWeight = DEFAULT_TOMB_HOLDER_VOTING_WEIGHT; // equiv to 30 index markers
-    royaltyBps = DEFAULT_ROYALTY_BPS; // 1,000 bps = 10%
+    marketFilterDAOAddress = _marketFilterDAOAddress;
+    tombHolderVotingWeight = DEFAULT_TOMB_HOLDER_VOTING_WEIGHT;
+    royaltyBps = DEFAULT_ROYALTY_BPS;
 
     // uncomment below if we allow tokenId 0 to mint
     /* isSingletonTombToken[_indexMarker][0] = true;
@@ -63,6 +87,8 @@ contract IndexMarkerV2 is
 
     _setDefaultRoyalty(_royaltyDestination, royaltyBps);
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    openseaRoyaltiesManager = msg.sender;
+    _grantRole(OPENSEA_ROYALTIES_ADMIN_ROLE, msg.sender);
   }
 
   function tokenURI(uint256 tokenId)
@@ -186,7 +212,9 @@ contract IndexMarkerV2 is
     override(ERC721Upgradeable, AccessControlUpgradeable, ERC2981Upgradeable)
     returns (bool)
   {
-    return super.supportsInterface(interfaceId);
+    return
+      interfaceId == type(IERC173).interfaceId ||
+      super.supportsInterface(interfaceId);
   }
 
   function _beforeTokenTransfer(
@@ -195,6 +223,14 @@ contract IndexMarkerV2 is
     uint256 tokenId,
     uint256 batchSize
   ) internal override(ERC721Upgradeable) {
+    // for opensea royalties
+    if (from != msg.sender && address(operatorFilterRegistry).code.length > 0) {
+      require(
+        operatorFilterRegistry.isOperatorAllowed(address(this), msg.sender),
+        "WrappedIndexMarker: operator not allowed"
+      );
+    }
+
     super._beforeTokenTransfer(from, to, tokenId, batchSize);
   }
 
@@ -212,4 +248,51 @@ contract IndexMarkerV2 is
     override
     onlyRole(UPGRADER_ROLE)
   {}
+
+  // for opensea royalties
+  function transferOwnership(address _newManager)
+    public
+    onlyRole(OPENSEA_ROYALTIES_ADMIN_ROLE)
+  {
+    emit OwnershipTransferred(openseaRoyaltiesManager, _newManager);
+    openseaRoyaltiesManager = _newManager;
+  }
+
+  // for opensea royalties
+  function owner() external view returns (address) {
+    return openseaRoyaltiesManager;
+  }
+
+  // for zora & opensea royalty integration
+  function updateMarketFilterSettings(bytes calldata args)
+    external
+    onlyRole(UPDATE_MARKET_SETTINGS_ROLE)
+    returns (bytes memory)
+  {
+    (bool success, bytes memory ret) = address(operatorFilterRegistry).call(
+      args
+    );
+    require(success, "WrappedIndexMarker: failed to update market settings");
+    return ret;
+  }
+
+  // for zora & opensea royalty integration
+  function manageMarketFilterDAOSubscription(bool enable)
+    external
+    onlyRole(UPDATE_MARKET_SETTINGS_ROLE)
+  {
+    address self = address(this);
+    require(
+      marketFilterDAOAddress != address(0),
+      "WrappedIndexMarker: DAO not set"
+    );
+    if (!operatorFilterRegistry.isRegistered(self) && enable) {
+      operatorFilterRegistry.registerAndSubscribe(self, marketFilterDAOAddress);
+    } else if (enable) {
+      operatorFilterRegistry.subscribe(self, marketFilterDAOAddress);
+    } else {
+      operatorFilterRegistry.unsubscribe(self, false);
+      operatorFilterRegistry.unregister(self);
+    }
+  }
 }
