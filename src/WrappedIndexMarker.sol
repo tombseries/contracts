@@ -9,7 +9,7 @@ import "openzeppelin-upgradeable/token/ERC721/extensions/ERC721VotesUpgradeable.
 import "openzeppelin-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
 import "openzeppelin-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 // TODO: import below from zora recovery repo
-import "./IRecoveryGovernorV1.sol";
+import "./IRecoveryChildV1.sol";
 
 contract WrappedIndexMarker is
   Initializable,
@@ -30,7 +30,6 @@ contract WrappedIndexMarker is
   address public recoveryRegistry;
   uint16 public tombHolderVotingWeight;
 
-  /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
     _disableInitializers();
   }
@@ -84,13 +83,20 @@ contract WrappedIndexMarker is
     override
     returns (uint256)
   {
-    (address token, uint256 tokenId) = IRecoveryGovernorV1(msg.sender)
-      .getRecoveryParentToken();
     if (
-      isTombContract[token] &&
-      IERC721Upgradeable(token).ownerOf(tokenId) == account
+      IERC165Upgradeable(msg.sender).supportsInterface(
+        type(IRecoveryChildV1).interfaceId
+      )
     ) {
-      return tombHolderVotingWeight + balanceOf(account);
+      (address parentToken, uint256 parentTokenId) = IRecoveryChildV1(
+        msg.sender
+      ).getRecoveryParentToken();
+      if (
+        isTombContract[parentToken] &&
+        IERC721Upgradeable(parentToken).ownerOf(parentTokenId) == account
+      ) {
+        return tombHolderVotingWeight + balanceOf(account);
+      }
     }
     return balanceOf(account);
   }
