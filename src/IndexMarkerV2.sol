@@ -73,6 +73,7 @@ contract IndexMarkerV2 is
   function initialize(address _indexMarker, address _marketFilterDAOAddress)
     public
     initializer
+    onlyRole(UPGRADER_ROLE)
   {
     __ERC721_init("Tomb Index Marker", "MKR");
     __AccessControl_init();
