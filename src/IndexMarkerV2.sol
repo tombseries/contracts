@@ -296,6 +296,10 @@ contract IndexMarkerV2 is
     bytes calldata data
   ) external returns (bytes4) {
     require(
+      msg.sender == address(indexMarker),
+      "Token must be a V1 Index Marker"
+    );
+    require(
       indexMarker.ownerOf(tokenId) == address(this),
       "Token ID must be owned by this contract"
     );
