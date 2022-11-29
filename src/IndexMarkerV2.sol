@@ -47,8 +47,13 @@ contract IndexMarkerV2 is
 
   uint16 internal constant DEFAULT_TOMB_HOLDER_VOTING_WEIGHT = 30; // 30 votes
   uint96 internal constant DEFAULT_ROYALTY_BPS = 1_000; // 10%
-  address payable internal constant TOMB_ARTIST =
-    payable(0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46);
+
+  // uncomment below if we decide to allow tokenId 0
+  // address payable internal constant TOMB_ARTIST =
+  //   payable(0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46);
+
+  address payable internal constant INITIAL_ROYALTY_DESTINATION =
+    payable(0x9699b55a6e3093D76F1147E936a2d59EC3a3B0B3);
 
   // zora & opensea compatibility
   IOperatorFilterRegistry immutable operatorFilterRegistry =
@@ -66,14 +71,13 @@ contract IndexMarkerV2 is
     _disableInitializers();
   }
 
-  function initialize(
-    address _indexMarker,
-    address payable _royaltyDestination,
-    address _marketFilterDAOAddress
-  ) public initializer {
-    __ERC721_init("Wrapped Tomb Index Marker", "WMKR");
+  function initialize(address _indexMarker, address _marketFilterDAOAddress)
+    public
+    initializer
+  {
+    __ERC721_init("Tomb Index Marker", "MKR");
     __AccessControl_init();
-    __EIP712_init("Wrapped Tomb Index Marker", "1");
+    __EIP712_init("Tomb Index Marker", "1");
     __ERC721Votes_init();
     __UUPSUpgradeable_init();
     __ERC2981_init();
@@ -87,7 +91,7 @@ contract IndexMarkerV2 is
     /* isSingletonTombToken[_indexMarker][0] = true;
     _setTokenRoyalty(0, TOMB_ARTIST, royaltyBps); */
 
-    _setDefaultRoyalty(_royaltyDestination, royaltyBps);
+    _setDefaultRoyalty(INITIAL_ROYALTY_DESTINATION, royaltyBps);
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     openseaRoyaltiesManager = msg.sender;
     _grantRole(OPENSEA_ROYALTIES_ADMIN_ROLE, msg.sender);
