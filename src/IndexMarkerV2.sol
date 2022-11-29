@@ -48,9 +48,8 @@ contract IndexMarkerV2 is
   uint16 internal constant DEFAULT_TOMB_HOLDER_VOTING_WEIGHT = 30; // 30 votes
   uint96 internal constant DEFAULT_ROYALTY_BPS = 1_000; // 10%
 
-  // uncomment below if we decide to allow tokenId 0
-  // address payable internal constant TOMB_ARTIST =
-  //   payable(0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46);
+  address payable internal constant TOMB_ARTIST =
+    payable(0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46);
 
   address payable internal constant INITIAL_ROYALTY_DESTINATION =
     payable(0x9699b55a6e3093D76F1147E936a2d59EC3a3B0B3);
@@ -87,11 +86,10 @@ contract IndexMarkerV2 is
     tombHolderVotingWeight = DEFAULT_TOMB_HOLDER_VOTING_WEIGHT;
     royaltyBps = DEFAULT_ROYALTY_BPS;
 
-    // uncomment below if we allow tokenId 0 to mint
-    /* isSingletonTombToken[_indexMarker][0] = true;
-    _setTokenRoyalty(0, TOMB_ARTIST, royaltyBps); */
-
+    isSingletonTombToken[_indexMarker][0] = true;
+    _setTokenRoyalty(0, TOMB_ARTIST, royaltyBps);
     _setDefaultRoyalty(INITIAL_ROYALTY_DESTINATION, royaltyBps);
+
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     openseaRoyaltiesManager = msg.sender;
     _grantRole(OPENSEA_ROYALTIES_ADMIN_ROLE, msg.sender);
@@ -297,12 +295,6 @@ contract IndexMarkerV2 is
     uint256 tokenId,
     bytes calldata data
   ) external returns (bytes4) {
-    // remove requirement below to allow tokenId 0 to mint
-    require(
-      tokenId != 0,
-      "WrappedIndexMarker: tokenId 0 is not an Index Marker"
-    );
-
     require(
       indexMarker.ownerOf(tokenId) == address(this),
       "Token ID must be owned by this contract"
