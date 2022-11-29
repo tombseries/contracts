@@ -9,6 +9,7 @@ import "openzeppelin-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/extensions/ERC721VotesUpgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
 import "openzeppelin-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import "openzeppelin-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "zora-drops-contracts/interfaces/IOperatorFilterRegistry.sol";
 import "./IRecoveryChildV1.sol";
 import "./utils/IERC173.sol";
@@ -30,6 +31,7 @@ contract IndexMarkerV2 is
   ERC721VotesUpgradeable,
   ERC2981Upgradeable,
   UUPSUpgradeable,
+  IERC721ReceiverUpgradeable,
   IERC173 /* required for opensea royalties */
 {
   bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
@@ -98,17 +100,6 @@ contract IndexMarkerV2 is
     returns (string memory)
   {
     return indexMarker.tokenURI(tokenId);
-  }
-
-  function mint(uint256 tokenId) public {
-    // remove requirement below to allow tokenId 0 to mint
-    require(
-      tokenId != 0,
-      "WrappedIndexMarker: tokenId 0 is not an Index Marker"
-    );
-
-    indexMarker.transferFrom(msg.sender, address(this), tokenId);
-    _mint(msg.sender, tokenId);
   }
 
   function _getVotingUnits(address account)
@@ -294,5 +285,22 @@ contract IndexMarkerV2 is
       operatorFilterRegistry.unsubscribe(self, false);
       operatorFilterRegistry.unregister(self);
     }
+  }
+
+  function onERC721Received(
+    address operator,
+    address from,
+    uint256 tokenId,
+    bytes calldata data
+  ) external returns (bytes4) {
+    // remove requirement below to allow tokenId 0 to mint
+    require(
+      tokenId != 0,
+      "WrappedIndexMarker: tokenId 0 is not an Index Marker"
+    );
+
+    _mint(from, tokenId);
+
+    return IERC721ReceiverUpgradeable.onERC721Received.selector;
   }
 }
