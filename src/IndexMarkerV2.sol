@@ -303,6 +303,11 @@ contract IndexMarkerV2 is
       "WrappedIndexMarker: tokenId 0 is not an Index Marker"
     );
 
+    require(
+      indexMarker.ownerOf(tokenId) == address(this),
+      "Token ID must be owned by this contract"
+    );
+
     _mint(from, tokenId);
 
     return IERC721ReceiverUpgradeable.onERC721Received.selector;
