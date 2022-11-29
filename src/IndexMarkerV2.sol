@@ -294,7 +294,7 @@ contract IndexMarkerV2 is
     address from,
     uint256 tokenId,
     bytes calldata data
-  ) external returns (bytes4) {
+  ) external onlyProxy returns (bytes4) {
     require(
       msg.sender == address(indexMarker),
       "Token must be a V1 Index Marker"
