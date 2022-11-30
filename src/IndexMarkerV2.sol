@@ -16,11 +16,8 @@ import "./utils/IRecoveryChildV1.sol";
 
 /**
  * note: This contract uses role-based access control. it also has an IERC173
- * compliant Owner, but this is solely for opensea royalty compatibility. The
- * Owner is the openseaRoyaltiesManager, which is set by whoever has the
- * OPENSEA_ROYALTIES_ADMIN_ROLE. The openseaRoyaltiesManager must be a
- * trusted EOA (not a contract), but the OPENSEA_ROYALTIES_ADMIN_ROLE should
- * be a multisig or governance contract.
+ * compliant Owner, but this is solely for centralized platforms that require
+ * an Owner for admin features. The Owner is not used for access control.
  */
 
 contract IndexMarkerV2 is
@@ -32,7 +29,7 @@ contract IndexMarkerV2 is
   ERC2981Upgradeable,
   UUPSUpgradeable,
   IERC721ReceiverUpgradeable,
-  IERC173 /* required for opensea royalties */
+  IERC173
 {
   bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
   bytes32 public constant SET_TOMB_VOTING_WEIGHT_ROLE =
@@ -42,8 +39,8 @@ contract IndexMarkerV2 is
   bytes32 public constant SET_ROYALTIES_ROLE = keccak256("SET_ROYALTIES_ROLE");
   bytes32 public constant UPDATE_MARKET_SETTINGS_ROLE =
     keccak256("UPDATE_MARKET_SETTINGS_ROLE");
-  bytes32 public constant OPENSEA_ROYALTIES_ADMIN_ROLE =
-    keccak256("OPENSEA_ROYALTIES_ADMIN_ROLE");
+  bytes32 public constant ERC173_OWNER_ADMIN_ROLE =
+    keccak256("ERC173_OWNER_ADMIN_ROLE");
 
   uint16 internal constant DEFAULT_TOMB_HOLDER_VOTING_WEIGHT = 30; // 30 votes
   uint96 internal constant DEFAULT_ROYALTY_BPS = 1_000; // 10%
@@ -54,17 +51,15 @@ contract IndexMarkerV2 is
   address payable internal constant INITIAL_ROYALTY_DESTINATION =
     payable(0x9699b55a6e3093D76F1147E936a2d59EC3a3B0B3);
 
-  // zora & opensea compatibility
   IOperatorFilterRegistry immutable operatorFilterRegistry =
     IOperatorFilterRegistry(0x000000000000AAeB6D7670E522A718067333cd4E);
   address public marketFilterDAOAddress;
 
-  uint96 public royaltyBps;
   IERC721MetadataUpgradeable public indexMarker;
   mapping(address => bool) public isTombContract;
   mapping(address => mapping(uint256 => bool)) public isSingletonTombToken;
   uint16 public tombHolderVotingWeight;
-  address internal openseaRoyaltiesManager;
+  address internal erc173Owner;
 
   constructor() {
     _disableInitializers();
@@ -85,15 +80,14 @@ contract IndexMarkerV2 is
     indexMarker = IERC721MetadataUpgradeable(_indexMarker);
     marketFilterDAOAddress = _marketFilterDAOAddress;
     tombHolderVotingWeight = DEFAULT_TOMB_HOLDER_VOTING_WEIGHT;
-    royaltyBps = DEFAULT_ROYALTY_BPS;
 
     isSingletonTombToken[_indexMarker][0] = true;
-    _setTokenRoyalty(0, TOMB_ARTIST, royaltyBps);
-    _setDefaultRoyalty(INITIAL_ROYALTY_DESTINATION, royaltyBps);
+    _setTokenRoyalty(0, TOMB_ARTIST, DEFAULT_ROYALTY_BPS);
+    _setDefaultRoyalty(INITIAL_ROYALTY_DESTINATION, DEFAULT_ROYALTY_BPS);
 
-    _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    openseaRoyaltiesManager = msg.sender;
-    _grantRole(OPENSEA_ROYALTIES_ADMIN_ROLE, msg.sender);
+    _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    erc173Owner = _msgSender();
+    _grantRole(ERC173_OWNER_ADMIN_ROLE, _msgSender());
   }
 
   function tokenURI(uint256 tokenId)
@@ -112,12 +106,12 @@ contract IndexMarkerV2 is
     returns (uint256)
   {
     if (
-      IERC165Upgradeable(msg.sender).supportsInterface(
+      IERC165Upgradeable(_msgSender()).supportsInterface(
         type(IRecoveryChildV1).interfaceId
       )
     ) {
       (address parentToken, uint256 parentTokenId) = IRecoveryChildV1(
-        msg.sender
+        _msgSender()
       ).getRecoveryParentToken();
       if (
         isTomb(parentToken, parentTokenId) &&
@@ -217,10 +211,11 @@ contract IndexMarkerV2 is
     uint256 tokenId,
     uint256 batchSize
   ) internal override(ERC721Upgradeable) {
-    // for opensea royalties
-    if (from != msg.sender && address(operatorFilterRegistry).code.length > 0) {
+    if (
+      from != _msgSender() && address(operatorFilterRegistry).code.length > 0
+    ) {
       require(
-        operatorFilterRegistry.isOperatorAllowed(address(this), msg.sender),
+        operatorFilterRegistry.isOperatorAllowed(address(this), _msgSender()),
         "WrappedIndexMarker: operator not allowed"
       );
     }
@@ -243,21 +238,18 @@ contract IndexMarkerV2 is
     onlyRole(UPGRADER_ROLE)
   {}
 
-  // for opensea royalties
   function transferOwnership(address _newManager)
     public
-    onlyRole(OPENSEA_ROYALTIES_ADMIN_ROLE)
+    onlyRole(ERC173_OWNER_ADMIN_ROLE)
   {
-    emit OwnershipTransferred(openseaRoyaltiesManager, _newManager);
-    openseaRoyaltiesManager = _newManager;
+    emit OwnershipTransferred(erc173Owner, _newManager);
+    erc173Owner = _newManager;
   }
 
-  // for opensea royalties
   function owner() external view returns (address) {
-    return openseaRoyaltiesManager;
+    return erc173Owner;
   }
 
-  // for zora & opensea royalty integration
   function updateMarketFilterSettings(bytes calldata args)
     external
     onlyRole(UPDATE_MARKET_SETTINGS_ROLE)
@@ -270,7 +262,6 @@ contract IndexMarkerV2 is
     return ret;
   }
 
-  // for zora & opensea royalty integration
   function manageMarketFilterDAOSubscription(bool enable)
     external
     onlyRole(UPDATE_MARKET_SETTINGS_ROLE)
@@ -297,7 +288,7 @@ contract IndexMarkerV2 is
     bytes calldata data
   ) external onlyProxy returns (bytes4) {
     require(
-      msg.sender == address(indexMarker),
+      _msgSender() == address(indexMarker),
       "Token must be a V1 Index Marker"
     );
     require(
