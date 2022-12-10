@@ -52,15 +52,12 @@ contract ShadowBeacon is ERC721, Ownable {
     if (msg.sender != allowedSigner) revert OnlyAuthorizedSigner();
     require(from == ownerOf[id], "WRONG_FROM");
 
-    if (ownerOf[id] == address(0)) {
-      _mint(to, id);
-      return;
-    }
-
     // Underflow of the sender's balance is impossible because we check for
     // ownership above and the recipient's balance can't realistically overflow.
     unchecked {
-      balanceOf[from]--;
+      if (from != address(0)) {
+        balanceOf[from]--;
+      }
       balanceOf[to]++;
     }
 
