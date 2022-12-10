@@ -25,6 +25,9 @@ contract ShadowBeacon is ERC721, Ownable {
   string public baseURI;
   address public allowedSigner;
 
+  error TokenIsNonTransferrable();
+  error OnlyAuthorizedSigner();
+
   constructor(address _allowedSigner) ERC721("Shadow Beacon", "SHDB") {
     allowedSigner = _allowedSigner;
   }
@@ -46,6 +49,7 @@ contract ShadowBeacon is ERC721, Ownable {
     address to,
     uint256 id
   ) public override {
+    if (msg.sender != allowedSigner) revert OnlyAuthorizedSigner();
     require(msg.sender == allowedSigner, "ONLY_ALLOWED_SIGNER");
     require(from == ownerOf[id], "WRONG_FROM");
 
@@ -79,11 +83,11 @@ contract ShadowBeacon is ERC721, Ownable {
   // Disabled functions //
 
   function approve(address, uint256) public pure override {
-    revert("NON_TRANSFERABLE");
+    revert TokenIsNonTransferrable();
   }
 
   function setApprovalForAll(address, bool) public pure override {
-    revert("NON_TRANSFERABLE");
+    revert TokenIsNonTransferrable();
   }
 
   function safeTransferFrom(
@@ -91,7 +95,7 @@ contract ShadowBeacon is ERC721, Ownable {
     address,
     uint256
   ) public pure override {
-    revert("NON_TRANSFERABLE");
+    revert TokenIsNonTransferrable();
   }
 
   function safeTransferFrom(
@@ -100,6 +104,6 @@ contract ShadowBeacon is ERC721, Ownable {
     uint256,
     bytes memory
   ) public pure override {
-    revert("NON_TRANSFERABLE");
+    revert TokenIsNonTransferrable();
   }
 }
