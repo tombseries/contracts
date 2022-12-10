@@ -45,10 +45,7 @@ contract ShadowDistribution is Ownable {
         _councilWallet = councilWallet;
     }
 
-    function saveMapping(uint256[] calldata tokenIds, address[] calldata owners)
-        public
-        onlyOwner
-    {
+    function saveMapping(uint256[] calldata tokenIds, address[] calldata owners) public onlyOwner {
         if (tokenIds.length != owners.length) revert("Invalid input");
         for (uint256 i = 0; i < tokenIds.length; i++) {
             emit WinnerStored(tokenIds[i], owners[i]);
@@ -56,11 +53,7 @@ contract ShadowDistribution is Ownable {
         }
     }
 
-    function makeHash(uint256 tokenID, address destination)
-        internal
-        pure
-        returns (bytes32)
-    {
+    function makeHash(uint256 tokenID, address destination) internal pure returns (bytes32) {
         return
             ECDSA.toEthSignedMessageHash(
                 abi.encodePacked(
@@ -81,14 +74,9 @@ contract ShadowDistribution is Ownable {
         address approvedAddress = ownerMapping[tokenID];
         require(approvedAddress == winner, "Invalid winner");
 
-        (address recovered, ECDSA.RecoverError error) = ECDSA.tryRecover(
-            makeHash(tokenID, destination),
-            sig
-        );
+        (address recovered, ECDSA.RecoverError error) = ECDSA.tryRecover(makeHash(tokenID, destination), sig);
         require(
-            error == ECDSA.RecoverError.NoError &&
-                recovered == approvedAddress &&
-                recovered == winner,
+            error == ECDSA.RecoverError.NoError && recovered == approvedAddress && recovered == winner,
             "Invalid signature"
         );
 

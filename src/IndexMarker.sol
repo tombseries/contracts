@@ -108,22 +108,13 @@ contract IndexMarker is Ownable, ERC721 {
             "Claim is too new"
         );
 
-        (address recovered, ECDSA.RecoverError error) = ECDSA.tryRecover(
-            keccak256(abi.encodePacked(tokenID)),
-            signature
-        );
-        require(
-            error == ECDSA.RecoverError.NoError && recovered == signer,
-            "Invalid signature"
-        );
+        (address recovered, ECDSA.RecoverError error) = ECDSA.tryRecover(keccak256(abi.encodePacked(tokenID)), signature);
+        require(error == ECDSA.RecoverError.NoError && recovered == signer, "Invalid signature");
 
         _mint(msg.sender, tokenID);
     }
 
-    function creatorClaim(uint256[] calldata tokenIDs, address destination)
-        public
-        onlyOwner
-    {
+    function creatorClaim(uint256[] calldata tokenIDs, address destination) public onlyOwner {
         require(!canMint(), "Can't admin claim when mint active");
         for (uint256 i = 0; i < tokenIDs.length; i++) {
             require(tokenIDs[i] <= maxIndex, "Index is too high");
@@ -139,10 +130,7 @@ contract IndexMarker is Ownable, ERC721 {
         royaltyPct = _newRoyaltyPct;
     }
 
-    function updateRoyaltyDestination(address _newRoyaltyDestination)
-        public
-        onlyOwner
-    {
+    function updateRoyaltyDestination(address _newRoyaltyDestination) public onlyOwner {
         royaltyDestination = _newRoyaltyDestination;
     }
 
@@ -150,20 +138,12 @@ contract IndexMarker is Ownable, ERC721 {
         baseURI = _baseURI;
     }
 
-    function setMintInformation(bool _isMintingAllowed, uint256 _mintExpiry)
-        public
-        onlyOwner
-    {
+    function setMintInformation(bool _isMintingAllowed, uint256 _mintExpiry) public onlyOwner {
         isMintingAllowed = _isMintingAllowed;
         mintExpiry = _mintExpiry;
     }
 
-    function tokenURI(uint256 tokenID)
-        public
-        view
-        override
-        returns (string memory)
-    {
+    function tokenURI(uint256 tokenID) public view override returns (string memory) {
         // for the RONIN metadata
         if (tokenID == 0) {
             return indexContract.tokenURI(21);
@@ -190,12 +170,7 @@ contract IndexMarker is Ownable, ERC721 {
         royaltyAmount = _salePrice / royaltyPct;
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        pure
-        override(ERC721)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public pure override(ERC721) returns (bool) {
         return
             interfaceId == 0x7f5828d0 || // ERC165 Interface ID for ERC173
             interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721

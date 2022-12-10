@@ -1,10 +1,13 @@
 {
   "extends": "solhint:recommended",
   "rules": {
+    "quotes": ["warn", "double"],
     "compiler-version": ["error", ">=0.8.0"],
     "avoid-low-level-calls": "off",
     "contract-name-camelcase": "off",
     "func-visibility": ["warn", { "ignoreConstructors": true }],
-    "max-line-length": ["error", 124]
-  }
+    "max-line-length": ["warn", 124],
+    "indent": ["error", 4]
+  },
+  "plugins": ["prettier"]
 }

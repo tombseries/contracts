@@ -66,12 +66,7 @@ contract Ronin is ERC721, Ownable {
         royaltyAmount = _salePrice / 10;
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        pure
-        override(ERC721)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public pure override(ERC721) returns (bool) {
         return
             interfaceId == 0x7f5828d0 || // ERC165 Interface ID for ERC173
             interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
