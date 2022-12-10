@@ -28,8 +28,11 @@ contract ShadowBeacon is ERC721, Ownable {
   error TokenIsNonTransferrable();
   error OnlyAuthorizedSigner();
 
-  constructor(address _allowedSigner) ERC721("Shadow Beacon", "SHDB") {
+  constructor(address _allowedSigner, string memory _baseURI)
+    ERC721("Shadow Beacon", "SHDB")
+  {
     allowedSigner = _allowedSigner;
+    baseURI = _baseURI;
   }
 
   // Admin functions //

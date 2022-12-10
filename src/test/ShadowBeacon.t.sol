@@ -4,7 +4,6 @@ pragma solidity >=0.8.0;
 import { ShadowBeacon } from "../ShadowBeacon.sol";
 import { DSTest } from "ds-test/test.sol";
 import { Utilities } from "./utils/Utilities.sol";
-import { console } from "./utils/Console.sol";
 import { Vm } from "forge-std/Vm.sol";
 
 contract ShadowBeaconTest is DSTest {
@@ -13,7 +12,7 @@ contract ShadowBeaconTest is DSTest {
   address signer = address(1234);
 
   function setUp() public {
-    beacon = new ShadowBeacon(signer);
+    beacon = new ShadowBeacon(signer, "");
     vm.prank(signer, signer);
     beacon.transferFrom(address(0), address(1), 1);
   }
