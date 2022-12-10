@@ -40,7 +40,7 @@ contract ShadowBeaconTest is DSTest {
 
   function testSignerTransferFromMint() public {
     vm.prank(signer, signer);
-    beacon.transferFrom(address(0), address(60), 60);
-    assertEq(beacon.ownerOf(60), address(60));
+    beacon.transferFrom(address(0), address(62), 60);
+    assertEq(beacon.ownerOf(60), address(62));
   }
 }
