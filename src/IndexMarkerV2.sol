@@ -1,3 +1,35 @@
+//    .^7??????????????????????????????????????????????????????????????????7!:       .~7????????????????????????????????:
+//     :#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Y   ^#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@5
+//    ^@@@@@@#BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB&@@@@@B ~@@@@@@#BBBBBBBBBBBBBBBBBBBBBBBBBBBBB#7
+//    Y@@@@@#                                                                ~@@@@@@ P@@@@@G
+//    .&@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&G~ ~@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Y :@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&P~
+//      J&@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#.!B@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@B~   .Y&@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@B
+//         ...........................B@@@@@5  .7#@@@@@@@#?^....................          ..........................:#@@@@@J
+//    ^5YYYJJJJJJJJJJJJJJJJJJJJJJJJJJY&@@@@@?     .J&@@@@@@&5JJJJJJJJJJJJJJJJJJJYYYYYYYYYYJJJJJJJJJJJJJJJJJJJJJJJJJJY@@@@@@!
+//    5@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@?         :5&@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@7
+//    !GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGPY~              ^JPGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGPJ^
+
+//  _____________________________________________________ Tomb Series  _____________________________________________________
+
+//       :!JYYYYJ!.                   .JYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY?~.   7YYYYYYYYY?~.              ^JYYYYYYYYY^
+//     ~&@@@@@@@@@@#7.                ?@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@P  &@@@@@@@@@@@@B!           :@@@@@@@@@@@5
+//    ^@@@@@@BB@@@@@@@B!              ?@@@@@&PGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG&@@@@@# JGGGGGGG#@@@@@@@G^         !PGGGGGGGGG!
+//    5@@@@@5  .7#@@@@@@@P^           ?@@@@@P                                .@@@@@@.         .J&@@@@@@&5:
+//    Y@@@@@Y     .J&@@@@@@&5:        ?@@@@@G                                 @@@@@@.            :Y&@@@@@@&J.
+//    Y@@@@@5        :5&@@@@@@&J.     ?@@@@@G                                 @@@@@@.               ^P@@@@@@@#7.
+//    Y@@@@@5           ^P@@@@@@@#7.  J@@@@@G                                 @@@@@@.                  ~G@@@@@@@B!
+//    Y@@@@@5              ~B@@@@@@@BG@@@@@@! PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP#@@@@@# JGPPPPPPPP5:        .7#@@@@@@@GPPPPPPG~
+//    5@@@@@5                .7#@@@@@@@@@@&! .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@G  &@@@@@@@@@@&           .J&@@@@@@@@@@@@5
+//    ^5YYY5~                   .!JYYYYY7:    Y5YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYJ~.   ?5YYYYYYY5J.              :7JYYYYYYYY5^
+
+//  __________________________________________________ Tomb Index Marker ___________________________________________________
+
+//  _______________________________________________ Deployed by TERRAIN 2022 _______________________________________________
+
+//  ___________________________________________ All tombs drawn by David Rudnick ___________________________________________
+
+//  ___________________________________ Contract architects: James Geary and Luke Miles ____________________________________
+
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
@@ -8,17 +40,11 @@ import "openzeppelin-upgradeable/token/common/ERC2981Upgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/extensions/ERC721VotesUpgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
-import "openzeppelin-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "openzeppelin-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import "openzeppelin-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "zora-drops-contracts/interfaces/IOperatorFilterRegistry.sol";
 import "./utils/IERC173.sol";
 import "./utils/IRecoveryChildV1.sol";
-
-/**
- * note: This contract uses role-based access control. it also has an IERC173
- * compliant Owner, but this is solely for centralized platforms that require
- * an Owner for admin features. The Owner is not used for access control.
- */
 
 contract IndexMarkerV2 is
   Initializable,
@@ -28,48 +54,38 @@ contract IndexMarkerV2 is
   ERC721VotesUpgradeable,
   ERC2981Upgradeable,
   UUPSUpgradeable,
-  IERC721ReceiverUpgradeable,
   IERC173
 {
-  bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
-  bytes32 public constant SET_TOMB_VOTING_WEIGHT_ROLE =
-    keccak256("SET_TOMB_VOTING_WEIGHT_ROLE");
-  bytes32 public constant SET_TOMB_CONTRACTS_ROLE =
-    keccak256("SET_TOMB_CONTRACTS_ROLE");
-  bytes32 public constant SET_ROYALTIES_ROLE = keccak256("SET_ROYALTIES_ROLE");
-  bytes32 public constant UPDATE_MARKET_SETTINGS_ROLE =
-    keccak256("UPDATE_MARKET_SETTINGS_ROLE");
-  bytes32 public constant ERC173_OWNER_ADMIN_ROLE =
-    keccak256("ERC173_OWNER_ADMIN_ROLE");
-
   uint16 internal constant DEFAULT_TOMB_HOLDER_VOTING_WEIGHT = 30; // 30 votes
   uint96 internal constant DEFAULT_ROYALTY_BPS = 1_000; // 10%
+  uint16 internal constant MAX_SUPPLY = 3_000;
 
   address payable internal constant TOMB_ARTIST =
     payable(0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46);
-
   address payable internal constant INITIAL_ROYALTY_DESTINATION =
     payable(0x9699b55a6e3093D76F1147E936a2d59EC3a3B0B3);
-
-  IOperatorFilterRegistry immutable operatorFilterRegistry =
+  IOperatorFilterRegistry public immutable operatorFilterRegistry =
     IOperatorFilterRegistry(0x000000000000AAeB6D7670E522A718067333cd4E);
   address public marketFilterDAOAddress;
 
-  IERC721MetadataUpgradeable public indexMarker;
+  address public tokenClaimSigner;
+  uint256 public mintExpiry; // Sat Dec 31 2022 23:59:59 GMT+0000
+  bool public isClaimAllowed;
+  string public baseURI;
+  mapping(bytes32 => uint256) public preclaimTimes;
   mapping(address => bool) public isTombContract;
   mapping(address => mapping(uint256 => bool)) public isSingletonTombToken;
-  uint16 public tombHolderVotingWeight;
   address internal erc173Owner;
 
   constructor() {
     _disableInitializers();
   }
 
-  function initialize(address _indexMarker, address _marketFilterDAOAddress)
-    public
-    initializer
-    onlyRole(UPGRADER_ROLE)
-  {
+  function initialize(
+    address _marketFilterDAOAddress,
+    address _tokenClaimSigner,
+    string calldata _metadataBaseURI
+  ) public initializer onlyRole(DEFAULT_ADMIN_ROLE) {
     __ERC721_init("Tomb Index Marker", "MKR");
     __AccessControl_init();
     __EIP712_init("Tomb Index Marker", "1");
@@ -77,132 +93,28 @@ contract IndexMarkerV2 is
     __UUPSUpgradeable_init();
     __ERC2981_init();
 
-    indexMarker = IERC721MetadataUpgradeable(_indexMarker);
-    marketFilterDAOAddress = _marketFilterDAOAddress;
-    tombHolderVotingWeight = DEFAULT_TOMB_HOLDER_VOTING_WEIGHT;
+    // initialize RONIN
+    _mint(_msgSender(), 0);
 
-    isSingletonTombToken[_indexMarker][0] = true;
+    mintExpiry = 1672531199;
+    isClaimAllowed = false;
+    marketFilterDAOAddress = _marketFilterDAOAddress;
+    tokenClaimSigner = _tokenClaimSigner;
+    baseURI = _metadataBaseURI;
     _setTokenRoyalty(0, TOMB_ARTIST, DEFAULT_ROYALTY_BPS);
     _setDefaultRoyalty(INITIAL_ROYALTY_DESTINATION, DEFAULT_ROYALTY_BPS);
 
     _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
-    erc173Owner = _msgSender();
-    _grantRole(ERC173_OWNER_ADMIN_ROLE, _msgSender());
   }
 
-  function tokenURI(uint256 tokenId)
-    public
-    view
-    override
-    returns (string memory)
-  {
-    return indexMarker.tokenURI(tokenId);
+  /// TOKEN AND MINTING ///
+
+  function _baseURI() internal view override returns (string memory) {
+    return baseURI;
   }
 
-  function _getVotingUnits(address account)
-    internal
-    view
-    override
-    returns (uint256)
-  {
-    if (
-      IERC165Upgradeable(_msgSender()).supportsInterface(
-        type(IRecoveryChildV1).interfaceId
-      )
-    ) {
-      (address parentToken, uint256 parentTokenId) = IRecoveryChildV1(
-        _msgSender()
-      ).getRecoveryParentToken();
-      if (
-        isTomb(parentToken, parentTokenId) &&
-        IERC721Upgradeable(parentToken).ownerOf(parentTokenId) == account
-      ) {
-        return tombHolderVotingWeight + balanceOf(account);
-      }
-    }
-    return balanceOf(account);
-  }
-
-  function setTombContracts(
-    address[] memory _contracts,
-    bool[] memory _isTombContract
-  ) public onlyRole(SET_TOMB_CONTRACTS_ROLE) {
-    require(
-      _contracts.length == _isTombContract.length,
-      "WrappedIndexMarker: invalid input"
-    );
-    for (uint256 i = 0; i < _contracts.length; i++) {
-      isTombContract[_contracts[i]] = _isTombContract[i];
-    }
-  }
-
-  function setTombTokens(
-    address[] memory _contracts,
-    uint256[] memory _tokenIds,
-    bool[] memory _isTombToken
-  ) public onlyRole(SET_TOMB_CONTRACTS_ROLE) {
-    require(
-      _contracts.length == _tokenIds.length &&
-        _tokenIds.length == _isTombToken.length,
-      "WrappedIndexMarker: invalid input"
-    );
-    for (uint256 i = 0; i < _contracts.length; i++) {
-      isSingletonTombToken[_contracts[i]][_tokenIds[i]] = _isTombToken[i];
-    }
-  }
-
-  function isTomb(address _tokenContract, uint256 _tokenId)
-    public
-    view
-    returns (bool)
-  {
-    return
-      isTombContract[_tokenContract] ||
-      isSingletonTombToken[_tokenContract][_tokenId];
-  }
-
-  function setTombHolderVotingWeight(uint16 _tombHolderVotingWeight)
-    public
-    onlyRole(SET_TOMB_VOTING_WEIGHT_ROLE)
-  {
-    tombHolderVotingWeight = _tombHolderVotingWeight;
-  }
-
-  function setDefaultRoyalty(address receiver, uint96 feeNumerator)
-    public
-    onlyRole(SET_ROYALTIES_ROLE)
-  {
-    _setDefaultRoyalty(receiver, feeNumerator);
-  }
-
-  function deleteDefaultRoyalty() public onlyRole(SET_ROYALTIES_ROLE) {
-    _deleteDefaultRoyalty();
-  }
-
-  function setTokenRoyalty(
-    uint256 tokenId,
-    address receiver,
-    uint96 feeNumerator
-  ) public onlyRole(SET_ROYALTIES_ROLE) {
-    _setTokenRoyalty(tokenId, receiver, feeNumerator);
-  }
-
-  function resetTokenRoyalty(uint256 tokenId)
-    public
-    onlyRole(SET_ROYALTIES_ROLE)
-  {
-    _resetTokenRoyalty(tokenId);
-  }
-
-  function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    override(ERC721Upgradeable, AccessControlUpgradeable, ERC2981Upgradeable)
-    returns (bool)
-  {
-    return
-      interfaceId == type(IERC173).interfaceId ||
-      super.supportsInterface(interfaceId);
+  function setBaseURI(string calldata newBaseURI) external {
+    baseURI = newBaseURI;
   }
 
   function _beforeTokenTransfer(
@@ -232,15 +144,102 @@ contract IndexMarkerV2 is
     super._afterTokenTransfer(from, to, tokenId, batchSize);
   }
 
-  function _authorizeUpgrade(address newImplementation)
-    internal
-    override
-    onlyRole(UPGRADER_ROLE)
-  {}
+  function adminMint(uint256[] calldata tokenIds, address[] calldata recipients)
+    public
+    onlyRole(DEFAULT_ADMIN_ROLE)
+  {
+    require(tokenIds.length == recipients.length, "IndexMarker: invalid input");
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+      require(tokenIds[i] <= MAX_SUPPLY, "Index is too high");
+      _mint(recipients[i], tokenIds[i]);
+    }
+  }
+
+  function canClaim() public view returns (bool) {
+    return isClaimAllowed && mintExpiry > block.timestamp;
+  }
+
+  function calculateClaimHash(
+    uint256 tokenId,
+    bytes memory signature,
+    address sender
+  ) internal pure returns (bytes32) {
+    return keccak256(abi.encodePacked(tokenId, signature, sender));
+  }
+
+  function preclaim(bytes32 _hash) public {
+    require(preclaimTimes[_hash] == 0, "Can't override hash value");
+    preclaimTimes[_hash] = block.timestamp;
+  }
+
+  function claim(uint256 tokenId, bytes memory signature) public {
+    require(canClaim(), "Public minting is not active");
+    require(tokenId <= MAX_SUPPLY, "Index is too high");
+    bytes32 claimHash = calculateClaimHash(tokenId, signature, _msgSender());
+    uint256 preclaimTime = preclaimTimes[claimHash];
+    require(preclaimTime != 0, "Token is not preminted");
+
+    require(block.timestamp - preclaimTime > 60, "Claim is too new");
+
+    (address recovered, ECDSAUpgradeable.RecoverError error) = ECDSAUpgradeable
+      .tryRecover(keccak256(abi.encodePacked(tokenId)), signature);
+    require(
+      error == ECDSAUpgradeable.RecoverError.NoError &&
+        recovered == tokenClaimSigner,
+      "Invalid signature"
+    );
+
+    _mint(msg.sender, tokenId);
+  }
+
+  function updateSigner(address _tokenClaimSigner)
+    public
+    onlyRole(DEFAULT_ADMIN_ROLE)
+  {
+    tokenClaimSigner = _tokenClaimSigner;
+  }
+
+  function setClaimAllowedAndExpiry(bool _isClaimAllowed, uint256 _expiry)
+    public
+    onlyRole(DEFAULT_ADMIN_ROLE)
+  {
+    isClaimAllowed = _isClaimAllowed;
+    mintExpiry = _expiry;
+  }
+
+  /// ROYALTIES ///
+
+  function setDefaultRoyalty(address receiver, uint96 feeNumerator)
+    public
+    onlyRole(DEFAULT_ADMIN_ROLE)
+  {
+    _setDefaultRoyalty(receiver, feeNumerator);
+  }
+
+  function deleteDefaultRoyalty() public onlyRole(DEFAULT_ADMIN_ROLE) {
+    _deleteDefaultRoyalty();
+  }
+
+  function setTokenRoyalty(
+    uint256 tokenId,
+    address receiver,
+    uint96 feeNumerator
+  ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    _setTokenRoyalty(tokenId, receiver, feeNumerator);
+  }
+
+  function resetTokenRoyalty(uint256 tokenId)
+    public
+    onlyRole(DEFAULT_ADMIN_ROLE)
+  {
+    _resetTokenRoyalty(tokenId);
+  }
+
+  /// CENTRALIZED PLATFORM FEES AND SETTINGS ///
 
   function transferOwnership(address _newManager)
     public
-    onlyRole(ERC173_OWNER_ADMIN_ROLE)
+    onlyRole(DEFAULT_ADMIN_ROLE)
   {
     emit OwnershipTransferred(erc173Owner, _newManager);
     erc173Owner = _newManager;
@@ -252,7 +251,7 @@ contract IndexMarkerV2 is
 
   function updateMarketFilterSettings(bytes calldata args)
     external
-    onlyRole(UPDATE_MARKET_SETTINGS_ROLE)
+    onlyRole(DEFAULT_ADMIN_ROLE)
     returns (bytes memory)
   {
     (bool success, bytes memory ret) = address(operatorFilterRegistry).call(
@@ -264,7 +263,7 @@ contract IndexMarkerV2 is
 
   function manageMarketFilterDAOSubscription(bool enable)
     external
-    onlyRole(UPDATE_MARKET_SETTINGS_ROLE)
+    onlyRole(DEFAULT_ADMIN_ROLE)
   {
     address self = address(this);
     require(
@@ -281,23 +280,64 @@ contract IndexMarkerV2 is
     }
   }
 
-  function onERC721Received(
-    address operator,
-    address from,
-    uint256 tokenId,
-    bytes calldata data
-  ) external onlyProxy returns (bytes4) {
-    require(
-      _msgSender() == address(indexMarker),
-      "Token must be a V1 Index Marker"
-    );
-    require(
-      indexMarker.ownerOf(tokenId) == address(this),
-      "Token ID must be owned by this contract"
-    );
+  /// TOMB REGISTRY ///
 
-    _mint(from, tokenId);
+  function setTombContracts(
+    address[] memory _contracts,
+    bool[] memory _isTombContract
+  ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    require(
+      _contracts.length == _isTombContract.length,
+      "IndexMarker: invalid input"
+    );
+    for (uint256 i = 0; i < _contracts.length; i++) {
+      isTombContract[_contracts[i]] = _isTombContract[i];
+    }
+  }
 
-    return IERC721ReceiverUpgradeable.onERC721Received.selector;
+  function setTombTokens(
+    address[] memory _contracts,
+    uint256[] memory _tokenIds,
+    bool[] memory _isTombToken
+  ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    require(
+      _contracts.length == _tokenIds.length &&
+        _tokenIds.length == _isTombToken.length,
+      "IndexMarker: invalid input"
+    );
+    for (uint256 i = 0; i < _contracts.length; i++) {
+      isSingletonTombToken[_contracts[i]][_tokenIds[i]] = _isTombToken[i];
+    }
+  }
+
+  function isTomb(address _tokenContract, uint256 _tokenId)
+    public
+    view
+    returns (bool)
+  {
+    return
+      isTombContract[_tokenContract] ||
+      isSingletonTombToken[_tokenContract][_tokenId];
+  }
+
+  /// UUPS ///
+
+  function _authorizeUpgrade(address newImplementation)
+    internal
+    override
+    onlyRole(DEFAULT_ADMIN_ROLE)
+  {}
+
+  /// ERC165 ///
+
+  function supportsInterface(bytes4 interfaceId)
+    public
+    view
+    override(ERC721Upgradeable, AccessControlUpgradeable, ERC2981Upgradeable)
+    returns (bool)
+  {
+    return
+      interfaceId == type(IERC173).interfaceId ||
+      super.supportsInterface(interfaceId);
   }
 }
