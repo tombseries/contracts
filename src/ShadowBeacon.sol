@@ -29,7 +29,7 @@ contract ShadowBeacon is ERC721, Ownable {
     error OnlyAuthorizedSigner();
 
     constructor(address _allowedSigner, string memory _baseURI)
-        ERC721("Shadow Beacon", "SHDB")
+        ERC721("SHADOW Beacon", "SHDB")
     {
         allowedSigner = _allowedSigner;
         baseURI = _baseURI;
