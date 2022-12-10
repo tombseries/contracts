@@ -50,7 +50,6 @@ contract ShadowBeacon is ERC721, Ownable {
     uint256 id
   ) public override {
     if (msg.sender != allowedSigner) revert OnlyAuthorizedSigner();
-    require(msg.sender == allowedSigner, "ONLY_ALLOWED_SIGNER");
     require(from == ownerOf[id], "WRONG_FROM");
 
     if (ownerOf[id] == address(0)) {
