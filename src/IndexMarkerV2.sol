@@ -70,9 +70,9 @@ contract IndexMarkerV2 is
 
   address public tokenClaimSigner;
   uint256 public mintExpiry; // Sat Dec 31 2022 23:59:59 GMT+0000
-  bool public isClaimAllowed;
+  bool public isMintAllowed;
   string public baseURI;
-  mapping(bytes32 => uint256) public preclaimTimes;
+  mapping(bytes32 => uint256) public premintTimes;
   mapping(address => bool) public isTombContract;
   mapping(address => mapping(uint256 => bool)) public isSingletonTombToken;
   address internal erc173Owner;
@@ -97,7 +97,7 @@ contract IndexMarkerV2 is
     _mint(_msgSender(), 0);
 
     mintExpiry = 1672531199;
-    isClaimAllowed = false;
+    isMintAllowed = false;
     marketFilterDAOAddress = _marketFilterDAOAddress;
     tokenClaimSigner = _tokenClaimSigner;
     baseURI = _metadataBaseURI;
@@ -155,11 +155,11 @@ contract IndexMarkerV2 is
     }
   }
 
-  function canClaim() public view returns (bool) {
-    return isClaimAllowed && mintExpiry > block.timestamp;
+  function canMint() public view returns (bool) {
+    return isMintAllowed && mintExpiry > block.timestamp;
   }
 
-  function calculateClaimHash(
+  function calculateMintHash(
     uint256 tokenId,
     bytes memory signature,
     address sender
@@ -167,19 +167,19 @@ contract IndexMarkerV2 is
     return keccak256(abi.encodePacked(tokenId, signature, sender));
   }
 
-  function preclaim(bytes32 _hash) public {
-    require(preclaimTimes[_hash] == 0, "Can't override hash value");
-    preclaimTimes[_hash] = block.timestamp;
+  function premint(bytes32 _hash) public {
+    require(premintTimes[_hash] == 0, "Can't override hash value");
+    premintTimes[_hash] = block.timestamp;
   }
 
-  function claim(uint256 tokenId, bytes memory signature) public {
-    require(canClaim(), "Public minting is not active");
+  function mint(uint256 tokenId, bytes memory signature) public {
+    require(canMint(), "Public minting is not active");
     require(tokenId <= MAX_SUPPLY, "Index is too high");
-    bytes32 claimHash = calculateClaimHash(tokenId, signature, _msgSender());
-    uint256 preclaimTime = preclaimTimes[claimHash];
-    require(preclaimTime != 0, "Token is not preminted");
+    bytes32 mintHash = calculateMintHash(tokenId, signature, _msgSender());
+    uint256 premintTime = premintTimes[mintHash];
+    require(premintTime != 0, "Token is not preminted");
 
-    require(block.timestamp - preclaimTime > 60, "Claim is too new");
+    require(block.timestamp - premintTime > 60, "Claim is too new");
 
     (address recovered, ECDSAUpgradeable.RecoverError error) = ECDSAUpgradeable
       .tryRecover(keccak256(abi.encodePacked(tokenId)), signature);
@@ -199,11 +199,11 @@ contract IndexMarkerV2 is
     tokenClaimSigner = _tokenClaimSigner;
   }
 
-  function setClaimAllowedAndExpiry(bool _isClaimAllowed, uint256 _expiry)
+  function setMintAllowedAndExpiry(bool _isMintAllowed, uint256 _expiry)
     public
     onlyRole(DEFAULT_ADMIN_ROLE)
   {
-    isClaimAllowed = _isClaimAllowed;
+    isMintAllowed = _isMintAllowed;
     mintExpiry = _expiry;
   }
 
