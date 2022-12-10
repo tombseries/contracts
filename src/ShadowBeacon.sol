@@ -22,87 +22,87 @@ import "openzeppelin/access/Ownable.sol";
 pragma solidity >=0.8.10;
 
 contract ShadowBeacon is ERC721, Ownable {
-  string public baseURI;
-  address public allowedSigner;
+    string public baseURI;
+    address public allowedSigner;
 
-  error TokenIsNonTransferrable();
-  error OnlyAuthorizedSigner();
+    error TokenIsNonTransferrable();
+    error OnlyAuthorizedSigner();
 
-  constructor(address _allowedSigner, string memory _baseURI)
-    ERC721("Shadow Beacon", "SHDB")
-  {
-    allowedSigner = _allowedSigner;
-    baseURI = _baseURI;
-  }
-
-  // Admin functions //
-
-  function setBaseURI(string memory _baseURI) public onlyOwner {
-    baseURI = _baseURI;
-  }
-
-  function setAllowedSigner(address _allowedSigner) public onlyOwner {
-    allowedSigner = _allowedSigner;
-  }
-
-  // Signer functions //
-
-  function transferFrom(
-    address from,
-    address to,
-    uint256 id
-  ) public override {
-    if (msg.sender != allowedSigner) revert OnlyAuthorizedSigner();
-    require(from == ownerOf[id], "WRONG_FROM");
-
-    // Underflow of the sender's balance is impossible because we check for
-    // ownership above and the recipient's balance can't realistically overflow.
-    unchecked {
-      if (from != address(0)) {
-        balanceOf[from]--;
-      }
-      balanceOf[to]++;
+    constructor(address _allowedSigner, string memory _baseURI)
+        ERC721("Shadow Beacon", "SHDB")
+    {
+        allowedSigner = _allowedSigner;
+        baseURI = _baseURI;
     }
 
-    ownerOf[id] = to;
-    emit Transfer(from, to, id);
-  }
+    // Admin functions //
 
-  // View functions //
+    function setBaseURI(string memory _baseURI) public onlyOwner {
+        baseURI = _baseURI;
+    }
 
-  function tokenURI(uint256 tokenID)
-    public
-    view
-    override
-    returns (string memory)
-  {
-    return string(abi.encodePacked(baseURI, Strings.toString(tokenID)));
-  }
+    function setAllowedSigner(address _allowedSigner) public onlyOwner {
+        allowedSigner = _allowedSigner;
+    }
 
-  // Disabled functions //
+    // Signer functions //
 
-  function approve(address, uint256) public pure override {
-    revert TokenIsNonTransferrable();
-  }
+    function transferFrom(
+        address from,
+        address to,
+        uint256 id
+    ) public override {
+        if (msg.sender != allowedSigner) revert OnlyAuthorizedSigner();
+        require(from == ownerOf[id], "WRONG_FROM");
 
-  function setApprovalForAll(address, bool) public pure override {
-    revert TokenIsNonTransferrable();
-  }
+        // Underflow of the sender's balance is impossible because we check for
+        // ownership above and the recipient's balance can't realistically overflow.
+        unchecked {
+            if (from != address(0)) {
+                balanceOf[from]--;
+            }
+            balanceOf[to]++;
+        }
 
-  function safeTransferFrom(
-    address,
-    address,
-    uint256
-  ) public pure override {
-    revert TokenIsNonTransferrable();
-  }
+        ownerOf[id] = to;
+        emit Transfer(from, to, id);
+    }
 
-  function safeTransferFrom(
-    address,
-    address,
-    uint256,
-    bytes memory
-  ) public pure override {
-    revert TokenIsNonTransferrable();
-  }
+    // View functions //
+
+    function tokenURI(uint256 tokenID)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        return string(abi.encodePacked(baseURI, Strings.toString(tokenID)));
+    }
+
+    // Disabled functions //
+
+    function approve(address, uint256) public pure override {
+        revert TokenIsNonTransferrable();
+    }
+
+    function setApprovalForAll(address, bool) public pure override {
+        revert TokenIsNonTransferrable();
+    }
+
+    function safeTransferFrom(
+        address,
+        address,
+        uint256
+    ) public pure override {
+        revert TokenIsNonTransferrable();
+    }
+
+    function safeTransferFrom(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) public pure override {
+        revert TokenIsNonTransferrable();
+    }
 }
