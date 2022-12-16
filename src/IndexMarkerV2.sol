@@ -37,6 +37,7 @@ import "openzeppelin-upgradeable/access/AccessControlUpgradeable.sol";
 import "openzeppelin-upgradeable/proxy/utils/Initializable.sol";
 import "openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "openzeppelin-upgradeable/token/common/ERC2981Upgradeable.sol";
+import "openzeppelin-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/extensions/ERC721VotesUpgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
@@ -66,6 +67,7 @@ contract IndexMarkerV2 is
         IOperatorFilterRegistry(0x000000000000AAeB6D7670E522A718067333cd4E);
     address public marketFilterDAOAddress;
 
+    IERC721Upgradeable public indexMarkerV1;
     address public tokenClaimSigner;
     uint256 public mintExpiry; // Sat Dec 31 2022 23:59:59 GMT+0000
     bool public isMintAllowed;
@@ -82,7 +84,8 @@ contract IndexMarkerV2 is
     function initialize(
         address _marketFilterDAOAddress,
         address _tokenClaimSigner,
-        string calldata _metadataBaseURI
+        string calldata _metadataBaseURI,
+        address _indexMarkerV1
     ) public initializer onlyRole(DEFAULT_ADMIN_ROLE) {
         __ERC721_init("Tomb Index Marker", "MKR");
         __AccessControl_init();
@@ -94,6 +97,7 @@ contract IndexMarkerV2 is
         // initialize RONIN
         _mint(_msgSender(), 0);
 
+        indexMarkerV1 = IERC721Upgradeable(_indexMarkerV1);
         mintExpiry = 1672531199; // Sat Dec 31 2022 23:59:59 GMT+0000
         isMintAllowed = false;
         marketFilterDAOAddress = _marketFilterDAOAddress;
@@ -138,6 +142,14 @@ contract IndexMarkerV2 is
         uint256 batchSize
     ) internal override(ERC721Upgradeable, ERC721VotesUpgradeable) {
         super._afterTokenTransfer(from, to, tokenId, batchSize);
+    }
+
+    function migrationMint(uint256[] calldata tokenIds) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            address recipient = indexMarkerV1.ownerOf(tokenIds[i]);
+            require(recipient != address(0), "IndexMarker: token does not exist");
+            _mint(recipient, tokenIds[i]);
+        }
     }
 
     function adminMint(uint256[] calldata tokenIds, address[] calldata recipients) public onlyRole(DEFAULT_ADMIN_ROLE) {
