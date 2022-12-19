@@ -7,7 +7,8 @@
     "contract-name-camelcase": "off",
     "func-visibility": ["warn", { "ignoreConstructors": true }],
     "max-line-length": ["warn", 124],
-    "indent": ["error", 4]
+    "indent": ["error", 4],
+    "cyclomatic-complexity": ["warn", 10]
   },
   "plugins": ["prettier"]
 }

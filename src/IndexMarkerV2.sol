@@ -33,49 +33,46 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "openzeppelin-upgradeable/access/AccessControlUpgradeable.sol";
+import "openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
 import "openzeppelin-upgradeable/proxy/utils/Initializable.sol";
 import "openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "openzeppelin-upgradeable/token/common/ERC2981Upgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "openzeppelin-upgradeable/token/ERC721/extensions/ERC721VotesUpgradeable.sol";
-import "openzeppelin-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
 import "openzeppelin-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import "openzeppelin-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
-import "zora-drops-contracts/interfaces/IOperatorFilterRegistry.sol";
+import "openzeppelin-upgradeable/utils/StringsUpgradeable.sol";
+import "zora-drops-contracts/src/interfaces/IOperatorFilterRegistry.sol";
 import "./utils/IERC173.sol";
-import "./utils/IRecoveryChildV1.sol";
 
 contract IndexMarkerV2 is
     Initializable,
     ERC721Upgradeable,
-    AccessControlUpgradeable,
+    OwnableUpgradeable,
     EIP712Upgradeable,
     ERC721VotesUpgradeable,
     ERC2981Upgradeable,
-    UUPSUpgradeable,
-    IERC173
+    UUPSUpgradeable
 {
-    uint16 internal constant DEFAULT_TOMB_HOLDER_VOTING_WEIGHT = 30; // 30 votes
     uint96 internal constant DEFAULT_ROYALTY_BPS = 1_000; // 10%
     uint16 internal constant MAX_SUPPLY = 3_000;
 
-    address payable internal constant TOMB_ARTIST = payable(0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46);
-    address payable internal constant INITIAL_ROYALTY_DESTINATION = payable(0x9699b55a6e3093D76F1147E936a2d59EC3a3B0B3);
+    address payable public constant TOMB_ARTIST = payable(0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46);
     IOperatorFilterRegistry public immutable operatorFilterRegistry =
         IOperatorFilterRegistry(0x000000000000AAeB6D7670E522A718067333cd4E);
     address public marketFilterDAOAddress;
 
+    ERC721Upgradeable public indexContract;
     IERC721Upgradeable public indexMarkerV1;
     address public tokenClaimSigner;
-    uint256 public mintExpiry; // Sat Dec 31 2022 23:59:59 GMT+0000
+    uint256 public mintExpiry;
     bool public isMintAllowed;
-    string public baseURI;
     mapping(bytes32 => uint256) public premintTimes;
     mapping(address => bool) public isTombContract;
     mapping(address => mapping(uint256 => bool)) public isSingletonTombToken;
-    address internal erc173Owner;
+
+    string public baseURI;
 
     constructor() {
         _disableInitializers();
@@ -84,11 +81,12 @@ contract IndexMarkerV2 is
     function initialize(
         address _marketFilterDAOAddress,
         address _tokenClaimSigner,
-        string calldata _metadataBaseURI,
-        address _indexMarkerV1
-    ) public initializer onlyRole(DEFAULT_ADMIN_ROLE) {
+        address _indexMarkerV1,
+        address payable _defaultRoyalty,
+        address _indexContract
+    ) public initializer {
+        __Ownable_init();
         __ERC721_init("Tomb Index Marker", "MKR");
-        __AccessControl_init();
         __EIP712_init("Tomb Index Marker", "1");
         __ERC721Votes_init();
         __UUPSUpgradeable_init();
@@ -102,20 +100,25 @@ contract IndexMarkerV2 is
         isMintAllowed = false;
         marketFilterDAOAddress = _marketFilterDAOAddress;
         tokenClaimSigner = _tokenClaimSigner;
-        baseURI = _metadataBaseURI;
+        baseURI = "ipfs://QmYZEr3xvwdd5v5wbFR4LEDrqaBRLG3gXg5uC6SK37GfaQ/";
+        indexContract = ERC721Upgradeable(_indexContract);
         _setTokenRoyalty(0, TOMB_ARTIST, DEFAULT_ROYALTY_BPS);
-        _setDefaultRoyalty(INITIAL_ROYALTY_DESTINATION, DEFAULT_ROYALTY_BPS);
-
-        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _setDefaultRoyalty(_defaultRoyalty, DEFAULT_ROYALTY_BPS);
     }
 
     /// TOKEN AND MINTING ///
 
-    function _baseURI() internal view override returns (string memory) {
-        return baseURI;
+    function tokenURI(uint256 tokenID) public view override returns (string memory) {
+        _requireMinted(tokenID);
+
+        if (tokenID == 0) {
+            return indexContract.tokenURI(21);
+        }
+
+        return string(abi.encodePacked(baseURI, StringsUpgradeable.toString(tokenID)));
     }
 
-    function setBaseURI(string calldata newBaseURI) external {
+    function setBaseURI(string calldata newBaseURI) external onlyOwner {
         baseURI = newBaseURI;
     }
 
@@ -128,7 +131,7 @@ contract IndexMarkerV2 is
         if (from != _msgSender() && address(operatorFilterRegistry).code.length > 0) {
             require(
                 operatorFilterRegistry.isOperatorAllowed(address(this), _msgSender()),
-                "WrappedIndexMarker: operator not allowed"
+                "IndexMarker: operator not allowed"
             );
         }
 
@@ -144,7 +147,7 @@ contract IndexMarkerV2 is
         super._afterTokenTransfer(from, to, tokenId, batchSize);
     }
 
-    function migrationMint(uint256[] calldata tokenIds) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function migrationMint(uint256[] calldata tokenIds) public onlyOwner {
         for (uint256 i = 0; i < tokenIds.length; i++) {
             address recipient = indexMarkerV1.ownerOf(tokenIds[i]);
             require(recipient != address(0), "IndexMarker: token does not exist");
@@ -152,10 +155,11 @@ contract IndexMarkerV2 is
         }
     }
 
-    function adminMint(uint256[] calldata tokenIds, address[] calldata recipients) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function adminMint(uint256[] calldata tokenIds, address[] calldata recipients) public onlyOwner {
+        require(!canMint(), "Can't admin claim when mint active");
         require(tokenIds.length == recipients.length, "IndexMarker: invalid input");
         for (uint256 i = 0; i < tokenIds.length; i++) {
-            require(tokenIds[i] <= MAX_SUPPLY, "Index is too high");
+            require(tokenIds[i] <= MAX_SUPPLY, "IndexMarker: Index is too high");
             _mint(recipients[i], tokenIds[i]);
         }
     }
@@ -173,44 +177,47 @@ contract IndexMarkerV2 is
     }
 
     function premint(bytes32 _hash) public {
-        require(premintTimes[_hash] == 0, "Can't override hash value");
+        require(premintTimes[_hash] == 0, "IndexMarker: Can't override hash value");
         premintTimes[_hash] = block.timestamp;
     }
 
     function mint(uint256 tokenId, bytes memory signature) public {
-        require(canMint(), "Public minting is not active");
-        require(tokenId <= MAX_SUPPLY, "Index is too high");
+        require(canMint(), "IndexMarker: Public minting is not active");
+        require(tokenId <= MAX_SUPPLY, "IndexMarker: Index is too high");
         bytes32 mintHash = calculateMintHash(tokenId, signature, _msgSender());
         uint256 premintTime = premintTimes[mintHash];
-        require(premintTime != 0, "Token is not preminted");
+        require(premintTime != 0, "IndexMarker: Token is not preminted");
 
-        require(block.timestamp - premintTime > 60, "Claim is too new");
+        require(block.timestamp - premintTime > 60, "IndexMarker: Claim is too new");
 
         (address recovered, ECDSAUpgradeable.RecoverError error) = ECDSAUpgradeable.tryRecover(
             keccak256(abi.encodePacked(tokenId)),
             signature
         );
-        require(error == ECDSAUpgradeable.RecoverError.NoError && recovered == tokenClaimSigner, "Invalid signature");
+        require(
+            error == ECDSAUpgradeable.RecoverError.NoError && recovered == tokenClaimSigner,
+            "IndexMarker: Invalid signature"
+        );
 
-        _mint(msg.sender, tokenId);
+        _mint(_msgSender(), tokenId);
     }
 
-    function updateSigner(address _tokenClaimSigner) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setTokenClaimSigner(address _tokenClaimSigner) public onlyOwner {
         tokenClaimSigner = _tokenClaimSigner;
     }
 
-    function setMintAllowedAndExpiry(bool _isMintAllowed, uint256 _expiry) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setMintAllowedAndExpiry(bool _isMintAllowed, uint256 _expiry) public onlyOwner {
         isMintAllowed = _isMintAllowed;
         mintExpiry = _expiry;
     }
 
     /// ROYALTIES ///
 
-    function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyOwner {
         _setDefaultRoyalty(receiver, feeNumerator);
     }
 
-    function deleteDefaultRoyalty() public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function deleteDefaultRoyalty() public onlyOwner {
         _deleteDefaultRoyalty();
     }
 
@@ -218,34 +225,25 @@ contract IndexMarkerV2 is
         uint256 tokenId,
         address receiver,
         uint96 feeNumerator
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) public onlyOwner {
         _setTokenRoyalty(tokenId, receiver, feeNumerator);
     }
 
-    function resetTokenRoyalty(uint256 tokenId) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function resetTokenRoyalty(uint256 tokenId) public onlyOwner {
         _resetTokenRoyalty(tokenId);
     }
 
-    /// CENTRALIZED PLATFORM FEES AND SETTINGS ///
+    /// OPERATOR FILTERING ///
 
-    function transferOwnership(address _newManager) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        emit OwnershipTransferred(erc173Owner, _newManager);
-        erc173Owner = _newManager;
-    }
-
-    function owner() external view returns (address) {
-        return erc173Owner;
-    }
-
-    function updateMarketFilterSettings(bytes calldata args) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bytes memory) {
+    function updateMarketFilterSettings(bytes calldata args) external onlyOwner returns (bytes memory) {
         (bool success, bytes memory ret) = address(operatorFilterRegistry).call(args);
-        require(success, "WrappedIndexMarker: failed to update market settings");
+        require(success, "IndexMarker: failed to update market settings");
         return ret;
     }
 
-    function manageMarketFilterDAOSubscription(bool enable) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function manageMarketFilterDAOSubscription(bool enable) external onlyOwner {
         address self = address(this);
-        require(marketFilterDAOAddress != address(0), "WrappedIndexMarker: DAO not set");
+        require(marketFilterDAOAddress != address(0), "IndexMarker: DAO not set");
         if (!operatorFilterRegistry.isRegistered(self) && enable) {
             operatorFilterRegistry.registerAndSubscribe(self, marketFilterDAOAddress);
         } else if (enable) {
@@ -258,10 +256,7 @@ contract IndexMarkerV2 is
 
     /// TOMB REGISTRY ///
 
-    function setTombContracts(address[] memory _contracts, bool[] memory _isTombContract)
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function setTombContracts(address[] memory _contracts, bool[] memory _isTombContract) public onlyOwner {
         require(_contracts.length == _isTombContract.length, "IndexMarker: invalid input");
         for (uint256 i = 0; i < _contracts.length; i++) {
             isTombContract[_contracts[i]] = _isTombContract[i];
@@ -272,7 +267,7 @@ contract IndexMarkerV2 is
         address[] memory _contracts,
         uint256[] memory _tokenIds,
         bool[] memory _isTombToken
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) public onlyOwner {
         require(
             _contracts.length == _tokenIds.length && _tokenIds.length == _isTombToken.length,
             "IndexMarker: invalid input"
@@ -288,14 +283,14 @@ contract IndexMarkerV2 is
 
     /// UUPS ///
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     /// ERC165 ///
 
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721Upgradeable, AccessControlUpgradeable, ERC2981Upgradeable)
+        override(ERC721Upgradeable, ERC2981Upgradeable)
         returns (bool)
     {
         return interfaceId == type(IERC173).interfaceId || super.supportsInterface(interfaceId);
