@@ -13,7 +13,7 @@ contract MigrationMintIndexMarkerV2 is Script {
     uint256 public constant TOKEN_IDS_FILE_LENGTH_GOERLI = 638;
 
     address public constant INDEX_MARKER_V1_MAINNET = 0x741d6BF0997A313720b5884F749685f7e9a994D6;
-    address public constant INDEX_MARKER_V2_MAINNET = address(0);
+    address public constant INDEX_MARKER_V2_MAINNET = 0xa5c93e5d9eb8fb1B40228bb93fD40990913dB523;
     string public constant TOKEN_IDS_FILE_PATH_MAINNET = "./mainnet-token-ids.txt";
     uint256 public constant TOKEN_IDS_FILE_LENGTH_MAINNET = 0;
 
