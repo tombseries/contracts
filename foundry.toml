@@ -3,5 +3,8 @@ src = 'src'
 out = 'out'
 libs = ['lib']
 fs_permissions = [{ access = "read", path = "./"}]
+optimizer = true
+optimizer_runs = 500000
+
 
 # See more config options https://github.com/gakonst/foundry/tree/master/config
