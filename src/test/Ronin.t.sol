@@ -47,10 +47,7 @@ contract RoninTest is DSTest {
     }
 
     function testRoyaltyInfo() public {
-        (address artist, uint256 amount) = RoninContract.royaltyInfo(
-            160,
-            4234000000
-        );
+        (address artist, uint256 amount) = RoninContract.royaltyInfo(160, 4234000000);
         assertEq(artist, ArtistAddress);
         assertEq(amount, 423400000);
     }

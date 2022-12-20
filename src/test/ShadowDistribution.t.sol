@@ -28,22 +28,13 @@ contract ShadowDistributionTest is DSTest {
         unauthorizedUser = utils.createUsers(1)[0];
 
         ShadowContract = new Shadow(TombCouncil);
-        ShadowDistributionContract = new ShadowDistribution(
-            address(ShadowContract),
-            TombCouncil
-        );
+        ShadowDistributionContract = new ShadowDistribution(address(ShadowContract), TombCouncil);
 
         vm.prank(TombCouncil, TombCouncil);
         ShadowContract.init();
-        ShadowContract.setApprovalForAll(
-            address(ShadowDistributionContract),
-            true
-        );
+        ShadowContract.setApprovalForAll(address(ShadowDistributionContract), true);
 
-        vm.prank(
-            ShadowDistributionContract.owner(),
-            ShadowDistributionContract.owner()
-        );
+        vm.prank(ShadowDistributionContract.owner(), ShadowDistributionContract.owner());
         uint256[] memory ids = new uint256[](1);
         address[] memory addrs = new address[](1);
 
@@ -53,20 +44,13 @@ contract ShadowDistributionTest is DSTest {
         ShadowDistributionContract.saveMapping(ids, addrs);
 
         vm.prank(TombCouncil, TombCouncil);
-        ShadowContract.setApprovalForAll(
-            address(ShadowDistributionContract),
-            true
-        );
+        ShadowContract.setApprovalForAll(address(ShadowDistributionContract), true);
     }
 
     function testClaim() public {
         vm.prank(relayer, relayer);
 
-        assertEq(
-            ShadowContract.ownerOf(4),
-            TombCouncil,
-            "owner should be council"
-        );
+        assertEq(ShadowContract.ownerOf(4), TombCouncil, "owner should be council");
         ShadowDistributionContract.claimNFT(
             4,
             Worm,
@@ -79,11 +63,7 @@ contract ShadowDistributionTest is DSTest {
     function testFailClaimTwice() public {
         vm.prank(relayer, relayer);
 
-        assertEq(
-            ShadowContract.ownerOf(4),
-            TombCouncil,
-            "owner should be council"
-        );
+        assertEq(ShadowContract.ownerOf(4), TombCouncil, "owner should be council");
         ShadowDistributionContract.claimNFT(
             4,
             Worm,
@@ -102,11 +82,7 @@ contract ShadowDistributionTest is DSTest {
     function testFailDifferentWallet() public {
         vm.prank(relayer, relayer);
 
-        assertEq(
-            ShadowContract.ownerOf(4),
-            TombCouncil,
-            "owner should be council"
-        );
+        assertEq(ShadowContract.ownerOf(4), TombCouncil, "owner should be council");
         ShadowDistributionContract.claimNFT(
             4,
             Worm,
@@ -119,11 +95,7 @@ contract ShadowDistributionTest is DSTest {
     function testOtherWallet() public {
         vm.prank(relayer, relayer);
 
-        assertEq(
-            ShadowContract.ownerOf(4),
-            TombCouncil,
-            "owner should be council"
-        );
+        assertEq(ShadowContract.ownerOf(4), TombCouncil, "owner should be council");
         ShadowDistributionContract.claimNFT(
             4,
             Worm,

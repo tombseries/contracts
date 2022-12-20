@@ -22,13 +22,13 @@
 //    5@@@@@5                .7#@@@@@@@@@@&! .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@G  &@@@@@@@@@@&           .J&@@@@@@@@@@@@5
 //    ^5YYY5~                   .!JYYYYY7:    Y5YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYJ~.   ?5YYYYYYY5J.              :7JYYYYYYYY5^
 
-//  _______________________________________________________ Tomb Index  _____________________________________________________
+//  _____________________________________________________ Tomb Index  ______________________________________________________
 
-// _________________________________________________ Deployed by TERRAIN 2022 _______________________________________________
+//  _______________________________________________ Deployed by TERRAIN 2022 _______________________________________________
 
-// _____________________________________________ All tombs drawn by David Rudnick ___________________________________________
+//  ___________________________________________ All tombs drawn by David Rudnick ___________________________________________
 
-// ______________________________________________ Contract architect: Luke Miles ____________________________________________
+//  ____________________________________________ Contract architect: Luke Miles ____________________________________________
 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
@@ -44,16 +44,7 @@ contract TombIndex is ERC721, Ownable {
     bool public isFrozen;
 
     event TombUpdated(uint256 id);
-    string[] private houses = [
-        "GENESIS",
-        "LUX",
-        "X2",
-        "SHADOW",
-        "COMETS",
-        "DEVASTATORS",
-        "TERRA",
-        "RONIN"
-    ];
+    string[] private houses = ["GENESIS", "LUX", "X2", "SHADOW", "COMETS", "DEVASTATORS", "TERRA", "RONIN"];
 
     struct deployment {
         uint16 chainID;
@@ -73,9 +64,7 @@ contract TombIndex is ERC721, Ownable {
     mapping(uint8 => Tomb) public tombByID;
     mapping(uint8 => string) public tombNameByID;
 
-    constructor(string memory _imageURI, address artistAddress)
-        ERC721("Tomb Series", "TOMB")
-    {
+    constructor(string memory _imageURI, address artistAddress) ERC721("Tomb Series", "TOMB") {
         _initializeTombs(artistAddress);
         imageURI = _imageURI;
     }
@@ -1992,12 +1981,7 @@ contract TombIndex is ERC721, Ownable {
                 weight: 22862184,
                 numberInHouse: 10,
                 house: 7,
-                deployment: deployment({
-                    hostContract: address(this),
-                    tokenID: 111,
-                    chainID: 1,
-                    deployed: true
-                })
+                deployment: deployment({hostContract: address(this), tokenID: 111, chainID: 1, deployed: true})
             })
         );
 
@@ -3131,22 +3115,10 @@ contract TombIndex is ERC721, Ownable {
     }
 
     function _tombName(uint8 id) internal view returns (string memory) {
-        return
-            string(
-                abi.encodePacked(
-                    "Tomb ",
-                    RomanNumeral.ofNum(id),
-                    unicode" — ",
-                    tombNameByID[id]
-                )
-            );
+        return string(abi.encodePacked("Tomb ", RomanNumeral.ofNum(id), unicode" — ", tombNameByID[id]));
     }
 
-    function _ordinalString(uint8 number)
-        internal
-        pure
-        returns (string memory)
-    {
+    function _ordinalString(uint8 number) internal pure returns (string memory) {
         if (number <= 0) {
             return "0";
         }
@@ -3166,11 +3138,7 @@ contract TombIndex is ERC721, Ownable {
         return string(abi.encodePacked(_u256toString(number), suffix));
     }
 
-    function _tombDescription(uint8 id, Tomb memory tomb)
-        internal
-        view
-        returns (string memory)
-    {
+    function _tombDescription(uint8 id, Tomb memory tomb) internal view returns (string memory) {
         return
             string(
                 abi.encodePacked(
@@ -3191,14 +3159,8 @@ contract TombIndex is ERC721, Ownable {
     function ownerOfTomb(uint8 id) public view returns (address) {
         Tomb memory tomb = tombByID[id];
         require(tomb._initialized, "Tomb doesn't exist");
-        require(
-            tomb.deployment.chainID == 1,
-            "Can only check ownership value for Ethereum mainnet based Tombs"
-        );
-        return
-            ERC721(tomb.deployment.hostContract).ownerOf(
-                tomb.deployment.tokenID
-            );
+        require(tomb.deployment.chainID == 1, "Can only check ownership value for Ethereum mainnet based Tombs");
+        return ERC721(tomb.deployment.hostContract).ownerOf(tomb.deployment.tokenID);
     }
 
     function _makeAttribute(
@@ -3211,18 +3173,7 @@ contract TombIndex is ERC721, Ownable {
             strDelimiter = '"';
         }
 
-        return
-            string(
-                abi.encodePacked(
-                    '{"trait_type":"',
-                    name,
-                    '","value":',
-                    strDelimiter,
-                    value,
-                    strDelimiter,
-                    "}"
-                )
-            );
+        return string(abi.encodePacked('{"trait_type":"', name, '","value":', strDelimiter, value, strDelimiter, "}"));
     }
 
     function jsonForTomb(uint8 id) public view returns (bytes memory) {
@@ -3242,31 +3193,16 @@ contract TombIndex is ERC721, Ownable {
                 ",",
                 _makeAttribute("Weight", _u256toString(tomb.weight), false),
                 ",",
-                _makeAttribute(
-                    "Number in house",
-                    _u256toString(tomb.numberInHouse),
-                    false
-                ),
+                _makeAttribute("Number in house", _u256toString(tomb.numberInHouse), false),
                 "]}"
             );
     }
 
     function tokenURI(uint256 id) public view override returns (string memory) {
-        return
-            string(
-                abi.encodePacked(
-                    "data:application/json;base64,",
-                    Base64.encode(jsonForTomb(uint8(id)))
-                )
-            );
+        return string(abi.encodePacked("data:application/json;base64,", Base64.encode(jsonForTomb(uint8(id)))));
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        pure
-        override(ERC721)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public pure override(ERC721) returns (bool) {
         return
             interfaceId == 0x7f5828d0 || // ERC165 Interface ID for ERC173
             interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
@@ -3287,11 +3223,7 @@ contract TombIndex is ERC721, Ownable {
         return string(abi.encodePacked(_u256toString(part), glue, base));
     }
 
-    function _periodSeparatedNum(uint256 value)
-        internal
-        pure
-        returns (string memory)
-    {
+    function _periodSeparatedNum(uint256 value) internal pure returns (string memory) {
         string memory result = "";
         uint128 index;
         while (value > 0) {
@@ -3306,11 +3238,7 @@ contract TombIndex is ERC721, Ownable {
         return result;
     }
 
-    function _u256toString(uint256 value)
-        internal
-        pure
-        returns (string memory)
-    {
+    function _u256toString(uint256 value) internal pure returns (string memory) {
         // Inspired by OraclizeAPI's implementation - MIT license
         // https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
         if (value == 0) {

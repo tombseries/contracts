@@ -17,10 +17,7 @@ contract CatTest is DSTest {
     bytes internal sig;
 
     function setUp() public {
-        index = new TombIndex(
-            "https://tombseri.es/img/",
-            0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46
-        );
+        index = new TombIndex("https://tombseri.es/img/", 0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46);
         marker = new IndexMarker(
             0x818d7CA5aa6E964784267aAaEAEab323d5894A86,
             "https://tombseri.es",
@@ -46,9 +43,7 @@ contract CatTest is DSTest {
     function testFailPremint() public {
         // try to premint without waiting too long
         vm.warp(1655678279);
-        bytes32 hash = keccak256(
-            abi.encodePacked(uint256(100), sig, msg.sender)
-        );
+        bytes32 hash = keccak256(abi.encodePacked(uint256(100), sig, msg.sender));
         vm.prank(0x00a329c0648769A73afAc7F9381E08FB43dBEA72);
         marker.premint(hash);
         vm.prank(0x00a329c0648769A73afAc7F9381E08FB43dBEA72);
