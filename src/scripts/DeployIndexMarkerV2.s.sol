@@ -14,7 +14,7 @@ contract DeployIndexMarkerV2 is Script {
     address payable public constant ROYALTY_RECIPIENT_MAINNET = payable(0x9699b55a6e3093D76F1147E936a2d59EC3a3B0B3);
     address public constant MARKET_FILTER_DAO_ADDRESS_MAINNET = 0x3AE2804De4A54283601Db24a897856D9772eA0D8;
     address public constant INDEX_MARKER_V1_MAINNET = 0x741d6BF0997A313720b5884F749685f7e9a994D6;
-    address public TOMB_INDEX_MAINNET = 0x185E8a578bF6896e3988e7c38a6A23889CA2aF9f;
+    address public constant TOMB_INDEX_MAINNET = 0x185E8a578bF6896e3988e7c38a6A23889CA2aF9f;
 
     function run() public {
         if (block.chainid == 1) {
