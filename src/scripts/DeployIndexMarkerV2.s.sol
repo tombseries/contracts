@@ -5,8 +5,7 @@ import "forge-std/Script.sol";
 import "openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
 import "../IndexMarkerV2.sol";
 
-contract Deploy is Script {
-    address payable public constant OWNER_GOERLI = payable(0x7176E0d59a8bF299d57c6f4809ce88FB11D1cc31);
+contract DeployIndexMarkerV2 is Script {
     address public constant MARKET_FILTER_DAO_ADDRESS_GOERLI = 0x9b866b819376cb5c19c510edAAAbA9BA44e8b87c;
     address public constant INDEX_MARKER_V1_GOERLI = 0xC95Fb6E56B52A20693Ec98fb3b91F549C5eBECa8;
     address public constant TOMB_INDEX_GOERLI = 0xeC0a7349dC663a4C2363E72ee9de5aE24FA01163;
@@ -45,8 +44,10 @@ contract Deploy is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        new ERC1967Proxy(
-            address(new IndexMarkerV2()),
+        IndexMarkerV2 implementation = new IndexMarkerV2();
+
+        ERC1967Proxy proxy = new ERC1967Proxy(
+            address(implementation),
             abi.encodeWithSignature(
                 "initialize(address,address,address,address,address)",
                 marketFilterDAO,
@@ -56,6 +57,8 @@ contract Deploy is Script {
                 tombIndex
             )
         );
+
+        IndexMarkerV2(address(proxy)).manageMarketFilterDAOSubscription(true);
 
         vm.stopBroadcast();
     }
