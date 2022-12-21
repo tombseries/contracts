@@ -13,12 +13,7 @@ contract ShadowBeaconDummy is ERC721, Ownable {
         }
     }
 
-    function tokenURI(uint256 tokenID)
-        public
-        pure
-        override
-        returns (string memory)
-    {
+    function tokenURI(uint256 tokenID) public pure override returns (string memory) {
         return "";
     }
 }

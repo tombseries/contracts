@@ -28,9 +28,7 @@ contract ShadowBeacon is ERC721, Ownable {
     error TokenIsNonTransferrable();
     error OnlyAuthorizedSigner();
 
-    constructor(address _allowedSigner, string memory _baseURI)
-        ERC721("SHADOW Beacon", "SHDB")
-    {
+    constructor(address _allowedSigner, string memory _baseURI) ERC721("SHADOW Beacon", "SHDB") {
         allowedSigner = _allowedSigner;
         baseURI = _baseURI;
     }
@@ -70,12 +68,7 @@ contract ShadowBeacon is ERC721, Ownable {
 
     // View functions //
 
-    function tokenURI(uint256 tokenID)
-        public
-        view
-        override
-        returns (string memory)
-    {
+    function tokenURI(uint256 tokenID) public view override returns (string memory) {
         return string(abi.encodePacked(baseURI, Strings.toString(tokenID)));
     }
 
