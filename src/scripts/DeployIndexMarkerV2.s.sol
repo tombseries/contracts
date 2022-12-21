@@ -30,7 +30,7 @@ contract DeployIndexMarkerV2 is Script {
             run(owner, owner, INDEX_MARKER_V1_GOERLI, MARKET_FILTER_DAO_ADDRESS_GOERLI, TOMB_INDEX_GOERLI);
         } else {
             revert("Unsupported chain");
-        
+        }
     }
 
     function run(
