@@ -69,7 +69,7 @@ contract ShadowBeacon is ERC721, Ownable {
     // View functions //
 
     function tokenURI(uint256 tokenID) public view override returns (string memory) {
-        return string(abi.encodePacked(baseURI, Strings.toString(tokenID), ".svg"));
+        return string(abi.encodePacked(baseURI, Strings.toString(tokenID)));
     }
 
     // Disabled functions //
