@@ -45,5 +45,11 @@ jobs:
         with:
           version: nightly
 
-      - name: Run tests
+      - name: Sync beacon
         run: forge script SyncShadowBeacon --broadcast
+        env:
+          GOERLI_RPC_URL: ${{ secrets.GOERLI_RPC_URL }}
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+          MUMBAI_RPC_URL: ${{ secrets.MUMBAI_RPC_URL }}
+          POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
+          SHADOW_BEACON_RELAY_PRIVATE_KEY: ${{ secrets.SHADOW_BEACON_RELAY_PRIVATE_KEY }}
