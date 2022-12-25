@@ -3,6 +3,9 @@ name: Sync shadow beacon
 on:
   schedule:
     - cron: "*/30 * * * *"
+  push:
+    branches:
+      - main
 
 jobs:
   shadow-beacon:
