@@ -46,7 +46,7 @@ jobs:
           version: nightly
 
       - name: Sync beacon
-        run: forge script SyncShadowBeacon --broadcast
+        run: forge script SyncShadowBeacon --chain-id 1 --broadcast
         env:
           GOERLI_RPC_URL: ${{ secrets.GOERLI_RPC_URL }}
           MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}

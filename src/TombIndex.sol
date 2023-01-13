@@ -44,6 +44,7 @@ contract TombIndex is ERC721, Ownable {
     bool public isFrozen;
 
     event TombUpdated(uint256 id);
+
     string[] private houses = ["GENESIS", "LUX", "X2", "SHADOW", "COMETS", "DEVASTATORS", "TERRA", "RONIN"];
 
     struct deployment {

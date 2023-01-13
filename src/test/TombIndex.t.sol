@@ -43,6 +43,7 @@ contract TombContractTest is DSTest {
         TERRA,
         RONIN
     }
+
     struct Tomb {
         bool _active;
         string name;
