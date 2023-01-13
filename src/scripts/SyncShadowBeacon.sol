@@ -49,9 +49,9 @@ contract SyncShadowBeacon is Script {
         vm.startBroadcast(deployerPrivateKey);
         for (uint256 i = 0; i < 36; i++) {
             address owner = beacon.ownerOf(i + 1);
-            console.log("owner of %d is %s", i + 1, owner);
-            console.log("canonical owner of %d is %s", i + 1, canonicalOwners[i]);
             if (owner != canonicalOwners[i]) {
+                console.log("owner of %d is %s", i + 1, owner);
+                console.log("canonical owner of %d is %s", i + 1, canonicalOwners[i]);
                 beacon.transferFrom(owner, canonicalOwners[i], i + 1);
             }
         }
