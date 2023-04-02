@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "openzeppelin-upgradeable/token/ERC721/IERC721Upgradeable.sol";
-import "recovery-protocol/governance/RecoveryGovernor.sol";
-import "../IndexMarkerV2.sol";
+import {IERC721Upgradeable} from "openzeppelin-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import {RecoveryGovernor} from "recovery-protocol/governance/RecoveryGovernor.sol";
+import {IndexMarkerV2} from "../IndexMarkerV2.sol";
 
 // import index marker
 
@@ -13,7 +13,7 @@ contract TombRecoveryGovernor is RecoveryGovernor {
 
     mapping(address => mapping(uint256 => mapping(uint256 => bool))) public tombVotedOnProposal;
 
-    function _indexMarker() internal pure returns (IndexMarkerV2) {
+    function _indexMarker() internal view returns (IndexMarkerV2) {
         if (block.chainid == 5) {
             return IndexMarkerV2(INDEX_MARKER_GOERLI);
         } else if (block.chainid == 1) {
@@ -33,7 +33,7 @@ contract TombRecoveryGovernor is RecoveryGovernor {
         require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
         uint256 weight = _getVotes(account, proposalSnapshot(proposalId), params);
         if (params.length > 0) {
-            (address[] memory tombContracts, uint256[] memory tombTokenIds) = abi.decode(params, (uint256[], address[]));
+            (address[] memory tombContracts, uint256[] memory tombTokenIds) = abi.decode(params, (address[], uint256[]));
             for (uint256 i = 0; i < tombTokenIds.length; i++) {
                 if (!_indexMarker().isTomb(tombContracts[i], tombTokenIds[i])) {
                     revert("TombRecoveryGovernor: token provided is not a tomb");
