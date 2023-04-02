@@ -6,3 +6,4 @@ solmate/=lib/solmate/src/
 base64/=lib/base64/
 forge-std/=lib/forge-std/src
 zora-drops-contracts/=lib/zora-drops-contracts/
+recovery-protocol/=lib/recovery-protocol/src/
