@@ -39,6 +39,9 @@ contract TombRecoveryGovernor is RecoveryGovernor {
                 revert("TombRecoveryGovernor: token contract and token id arrays must be the same length");
             }
             for (uint256 i = 0; i < tombTokenIds.length; i++) {
+                if (tombTokenContracts[i] == recoveryParentTokenContract && tombTokenIds[i] == recoveryParentTokenId) {
+                    continue;
+                }
                 if (!_indexMarker().isTomb(tombTokenContracts[i], tombTokenIds[i])) {
                     revert("TombRecoveryGovernor: token provided is not a tomb");
                 }
