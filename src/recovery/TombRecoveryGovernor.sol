@@ -5,8 +5,6 @@ import {IERC721Upgradeable} from "openzeppelin-upgradeable/token/ERC721/IERC721U
 import {RecoveryGovernor} from "recovery-protocol/governance/RecoveryGovernor.sol";
 import {IndexMarkerV2} from "../IndexMarkerV2.sol";
 
-// import index marker
-
 contract TombRecoveryGovernor is RecoveryGovernor {
     address constant INDEX_MARKER_GOERLI = 0x17DB883ed31582A82c69FeEe0B28ac662c877f00;
     address constant INDEX_MARKER_MAINNET = 0xa5c93e5d9eb8fb1B40228bb93fD40990913dB523;
@@ -33,18 +31,24 @@ contract TombRecoveryGovernor is RecoveryGovernor {
         require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
         uint256 weight = _getVotes(account, proposalSnapshot(proposalId), params);
         if (params.length > 0) {
-            (address[] memory tombContracts, uint256[] memory tombTokenIds) = abi.decode(params, (address[], uint256[]));
+            (address[] memory tombTokenContracts, uint256[] memory tombTokenIds) = abi.decode(
+                params,
+                (address[], uint256[])
+            );
+            if (tombTokenContracts.length != tombTokenIds.length) {
+                revert("TombRecoveryGovernor: token contract and token id arrays must be the same length");
+            }
             for (uint256 i = 0; i < tombTokenIds.length; i++) {
-                if (!_indexMarker().isTomb(tombContracts[i], tombTokenIds[i])) {
+                if (!_indexMarker().isTomb(tombTokenContracts[i], tombTokenIds[i])) {
                     revert("TombRecoveryGovernor: token provided is not a tomb");
                 }
-                if (IERC721Upgradeable(tombContracts[i]).ownerOf(tombTokenIds[i]) != account) {
+                if (IERC721Upgradeable(tombTokenContracts[i]).ownerOf(tombTokenIds[i]) != account) {
                     revert("TombRecoveryGovernor: token provided is not owned by voter");
                 }
-                if (tombVotedOnProposal[tombContracts[i]][tombTokenIds[i]][proposalId]) {
+                if (tombVotedOnProposal[tombTokenContracts[i]][tombTokenIds[i]][proposalId]) {
                     revert("TombRecoveryGovernor: tomb already voted on proposal");
                 }
-                tombVotedOnProposal[tombContracts[i]][tombTokenIds[i]][proposalId] = true;
+                tombVotedOnProposal[tombTokenContracts[i]][tombTokenIds[i]][proposalId] = true;
                 weight += 1;
             }
         }
