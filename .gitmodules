@@ -19,3 +19,6 @@
 [submodule "lib/zora-drops-contracts"]
 	path = lib/zora-drops-contracts
 	url = https://github.com/ourzora/zora-drops-contracts
+[submodule "lib/recovery-protocol"]
+	path = lib/recovery-protocol
+	url = https://github.com/ourzora/recovery-protocol
