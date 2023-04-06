@@ -6,19 +6,12 @@ import {RecoveryGovernor} from "recovery-protocol/governance/RecoveryGovernor.so
 import {IndexMarkerV2} from "../IndexMarkerV2.sol";
 
 contract TombRecoveryGovernor is RecoveryGovernor {
-    address constant INDEX_MARKER_GOERLI = 0x17DB883ed31582A82c69FeEe0B28ac662c877f00;
-    address constant INDEX_MARKER_MAINNET = 0xa5c93e5d9eb8fb1B40228bb93fD40990913dB523;
+    address immutable indexMarkerAddress;
 
     mapping(address => mapping(uint256 => mapping(uint256 => bool))) public tombVotedOnProposal;
 
-    function _indexMarker() internal view returns (IndexMarkerV2) {
-        if (block.chainid == 5) {
-            return IndexMarkerV2(INDEX_MARKER_GOERLI);
-        } else if (block.chainid == 1) {
-            return IndexMarkerV2(INDEX_MARKER_MAINNET);
-        } else {
-            revert("TombRecoveryGovernor: unsupported chain");
-        }
+    constructor(address indexMarkerAddress_) {
+        indexMarkerAddress = indexMarkerAddress_;
     }
 
     function _castVote(
@@ -42,7 +35,7 @@ contract TombRecoveryGovernor is RecoveryGovernor {
                 if (tombTokenContracts[i] == recoveryParentTokenContract && tombTokenIds[i] == recoveryParentTokenId) {
                     continue;
                 }
-                if (!_indexMarker().isTomb(tombTokenContracts[i], tombTokenIds[i])) {
+                if (!IndexMarkerV2(indexMarkerAddress).isTomb(tombTokenContracts[i], tombTokenIds[i])) {
                     revert("TombRecoveryGovernor: token provided is not a tomb");
                 }
                 if (IERC721Upgradeable(tombTokenContracts[i]).ownerOf(tombTokenIds[i]) != account) {
