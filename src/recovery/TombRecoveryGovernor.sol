@@ -68,6 +68,10 @@ contract TombRecoveryGovernor is RecoveryGovernor {
         return weight;
     }
 
+    function quorumDenominator() public view override returns (uint256) {
+        return 1000;
+    }
+
     // extra storage
     uint256[50] private __gap;
 }
