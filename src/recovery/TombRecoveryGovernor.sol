@@ -7,27 +7,51 @@ import {IndexMarkerV2} from "../IndexMarkerV2.sol";
 
 contract TombRecoveryGovernor is RecoveryGovernor {
     address immutable indexMarkerAddress;
+    address immutable voteAggregator;
 
     mapping(address => mapping(uint256 => mapping(uint256 => bool))) public tombVotedOnProposal;
 
-    constructor(address indexMarkerAddress_) {
+    constructor(address indexMarkerAddress_, address voteAggregator_) {
         indexMarkerAddress = indexMarkerAddress_;
+        voteAggregator = voteAggregator_;
     }
 
-    function _castVote(
+    modifier onlyVoteAggregator() {
+        require(msg.sender == voteAggregator, "Governor: Only vote aggregator can call");
+        _;
+    }
+
+    function castVoteOnBehalfOf(uint256 proposalId, address account, uint8 support) external onlyVoteAggregator {
+        return _castVote(proposalId, account, support, "");
+    }
+
+    function castVoteOnBehalfOfWithReason(uint256 proposalId, address account, uint8 support, string memory reason)
+        external
+        onlyVoteAggregator
+    {
+        return _castVote(proposalId, account, support, reason);
+    }
+
+    function castVoteOnBehalfOfWithReasonAndParams(
         uint256 proposalId,
         address account,
         uint8 support,
         string memory reason,
         bytes memory params
-    ) internal override returns (uint256) {
+    ) external onlyVoteAggregator {
+        return _castVote(proposalId, account, support, reason, params);
+    }
+
+    function _castVote(uint256 proposalId, address account, uint8 support, string memory reason, bytes memory params)
+        internal
+        override
+        returns (uint256)
+    {
         require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
         uint256 weight = _getVotes(account, proposalSnapshot(proposalId), params);
         if (params.length > 0) {
-            (address[] memory tombTokenContracts, uint256[] memory tombTokenIds) = abi.decode(
-                params,
-                (address[], uint256[])
-            );
+            (address[] memory tombTokenContracts, uint256[] memory tombTokenIds) =
+                abi.decode(params, (address[], uint256[]));
             if (tombTokenContracts.length != tombTokenIds.length) {
                 revert("TombRecoveryGovernor: token contract and token id arrays must be the same length");
             }
