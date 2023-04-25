@@ -121,6 +121,8 @@ contract TombRecoveryGovernorTest is Test, EIP712Upgradeable {
         RecoveryGovernor governor = RecoveryGovernor(addresses.governor);
         RecoveryTreasury treasury = RecoveryTreasury(addresses.treasury);
 
+        assertEq(governor.quorumDenominator(), 1000);
+
         address[] memory targets = new address[](1);
         targets[0] = address(collection);
         uint256[] memory values = new uint256[](1);
