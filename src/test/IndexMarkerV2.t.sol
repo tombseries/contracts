@@ -4,7 +4,8 @@ pragma solidity >=0.8.0;
 import {ERC1967Proxy} from "openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 import {OperatorFilterRegistry} from "zora-drops-contracts/test/filter/OperatorFilterRegistry.sol";
-import {OperatorFilterRegistryErrorsAndEvents} from "zora-drops-contracts/test/filter/OperatorFilterRegistryErrorsAndEvents.sol";
+import {OperatorFilterRegistryErrorsAndEvents} from
+    "zora-drops-contracts/test/filter/OperatorFilterRegistryErrorsAndEvents.sol";
 import {OwnedSubscriptionManager} from "zora-drops-contracts/src/filter/OwnedSubscriptionManager.sol";
 import {DSTest} from "ds-test/test.sol";
 import {console} from "./utils/Console.sol";
@@ -12,6 +13,26 @@ import {Vm} from "forge-std/Vm.sol";
 import {IndexMarkerV2} from "../IndexMarkerV2.sol";
 import {IndexMarker} from "../IndexMarker.sol";
 import {TombIndex} from "../TombIndex.sol";
+import {TombMetadata} from "../TombMetadata.sol";
+import {ERC721} from "solady/tokens/ERC721.sol";
+
+contract Tomb721 is ERC721 {
+    function name() public view virtual override returns (string memory) {
+        return "TOMB";
+    }
+
+    function symbol() public view virtual override returns (string memory) {
+        return "TOMBT";
+    }
+
+    function mint(address _to, uint256 _tokenId) public {
+        _mint(_to, _tokenId);
+    }
+
+    function tokenURI(uint256 id) public view virtual override returns (string memory) {
+        return "";
+    }
+}
 
 contract IndexMarkerV2Test is DSTest {
     address payable public constant TOMB_ARTIST = payable(0x4a61d76ea05A758c1db9C9b5a5ad22f445A38C46);
@@ -23,10 +44,14 @@ contract IndexMarkerV2Test is DSTest {
     address internal markerV2;
     address internal markerV1;
     address internal tombIndex;
+    Tomb721 internal tombNFT;
+    TombMetadata internal metadata;
     address internal constant OPERATOR_FILTER_REGISTRY = address(0x000000000000AAeB6D7670E522A718067333cd4E);
     address internal constant ADMIN = address(0x789);
 
     event Upgraded(address indexed implementation);
+    event EngravingSet(address indexed _tokenContract, uint256 indexed _tokenId, address author, string _engraving);
+    event BootlinkSet(address indexed _tokenContract, uint256 indexed _tokenId, address author, string _bootLink);
 
     function setUp() public {
         signer = vm.addr(SIGNER_PK);
@@ -51,6 +76,9 @@ contract IndexMarkerV2Test is DSTest {
         );
         IndexMarkerV2(markerV2).setMintAllowedAndExpiry(true, 1672531199);
         IndexMarkerV2(markerV2).transferOwnership(ADMIN);
+        tombNFT = new Tomb721();
+        vm.prank(ADMIN);
+        metadata = new TombMetadata(address(markerV2));
     }
 
     function mintV1(uint256 tokenID, address dest) public {
@@ -344,5 +372,50 @@ contract IndexMarkerV2Test is DSTest {
         vm.expectEmit(true, false, false, false);
         emit Upgraded(newImpl);
         IndexMarkerV2(markerV2).upgradeTo(newImpl);
+    }
+
+    function testMetadata() public {
+        address tombOwner = address(123);
+        address[] memory tombContracts = new address[](1);
+        tombContracts[0] = address(tombNFT);
+        bool[] memory isTombContract = new bool[](1);
+        isTombContract[0] = true;
+        tombNFT.mint(tombOwner, 1);
+        tombNFT.mint(tombOwner, 3);
+
+        vm.prank(ADMIN);
+        IndexMarkerV2(markerV2).setTombContracts(tombContracts, isTombContract);
+
+        vm.prank(tombOwner, tombOwner);
+        vm.expectEmit(true, false, false, false);
+        emit BootlinkSet(address(tombNFT), 1, tombOwner, "google.com");
+        metadata.setBootlink(address(tombNFT), 1, "google.com");
+
+        vm.prank(tombOwner, tombOwner);
+        vm.expectEmit(true, false, false, false);
+        emit EngravingSet(address(tombNFT), 1, tombOwner, "Here we go!");
+        metadata.setEngraving(address(tombNFT), 1, "Here we go!");
+
+        vm.prank(ADMIN);
+        vm.expectEmit(true, false, false, false);
+        emit BootlinkSet(address(tombNFT), 3, address(ADMIN), "admin.com");
+        metadata.setBootlink(address(tombNFT), 3, "admin.com");
+
+        vm.prank(ADMIN);
+        vm.expectEmit(true, false, false, false);
+        emit EngravingSet(address(tombNFT), 3, address(ADMIN), "admin!");
+        metadata.setEngraving(address(tombNFT), 3, "admin!");
+
+        assertEq(metadata.getBootLink(address(tombNFT), 1), "google.com");
+        assertEq(metadata.getEngraving(address(tombNFT), 1), "Here we go!");
+        assertEq(metadata.getBootLink(address(tombNFT), 3), "admin.com");
+        assertEq(metadata.getEngraving(address(tombNFT), 3), "admin!");
+
+        vm.prank(address(100));
+        vm.expectRevert("TombMetadata: Not tomb owner");
+        metadata.setEngraving(address(tombNFT), 3, "Not my tomb");
+
+        vm.expectRevert("TombMetadata: Not a tomb");
+        metadata.setEngraving(address(100), 3, "Not my tomb");
     }
 }
