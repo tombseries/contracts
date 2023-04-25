@@ -7,8 +7,8 @@ import "../recovery/TombRecoveryGovernor.sol";
 contract DeployRecoveryGovernor is Script {
     address public constant INDEX_MARKER_MAINNET = 0xa5c93e5d9eb8fb1B40228bb93fD40990913dB523;
     address constant INDEX_MARKER_GOERLI = 0x17DB883ed31582A82c69FeEe0B28ac662c877f00;
-    address constant VOTE_AGGREGATOR_MAINNET = 0xDCA75297e26353889f4BB7A66D6BfEB6DB8dFad0;
-    address constant VOTE_AGGREGATOR_GOERLI = 0x6623884dA17E2A0BFf68773A5376292d5142AEe4;
+    address constant VOTE_AGGREGATOR_MAINNET = 0x6623884dA17E2A0BFf68773A5376292d5142AEe4;
+    address constant VOTE_AGGREGATOR_GOERLI = 0xDCA75297e26353889f4BB7A66D6BfEB6DB8dFad0;
 
     function run() public {
         if (block.chainid == 1) {
