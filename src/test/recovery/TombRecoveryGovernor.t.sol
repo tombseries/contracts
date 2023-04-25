@@ -25,11 +25,17 @@ contract TombRecoveryGovernorTest is Test, EIP712Upgradeable {
     MockOwnable721 tarot;
     TombRecoveryGovernor tombGovernorImplementation;
 
+    event VoteCastWithParams(
+        address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason, bytes params
+    );
+    event VoteCast(address indexed voter, uint256 proposalId, uint8 support, uint256 weight, string reason);
+
     bytes32 public constant BALLOT_TYPEHASH = keccak256("Ballot(uint256 proposalId,uint8 support)");
 
     address admin = address(0x1);
     address tombHolder = address(0x2);
     address voter = address(0x3);
+    RecoveryVoteAggregator aggregator = new RecoveryVoteAggregator();
 
     address[] tombContracts;
 
@@ -55,8 +61,7 @@ contract TombRecoveryGovernorTest is Test, EIP712Upgradeable {
         address collectionImpl = address(new RecoveryCollection());
         address governorImpl = address(new RecoveryGovernor());
         address treasuryImpl = address(new RecoveryTreasury());
-        address aggregatorImpl = address(new RecoveryVoteAggregator());
-        tombGovernorImplementation = new TombRecoveryGovernor(address(indexMarker), aggregatorImpl);
+        tombGovernorImplementation = new TombRecoveryGovernor(address(indexMarker), address(aggregator));
         address registryImpl = address(new RecoveryRegistry(collectionImpl, governorImpl, treasuryImpl));
 
         registry = RecoveryRegistry(
@@ -142,6 +147,85 @@ contract TombRecoveryGovernorTest is Test, EIP712Upgradeable {
         vm.prank(voter);
         uint256 voterWeight = governor.castVote(proposalId, uint8(GovernorCountingSimple.VoteType.For));
         assertEq(voterWeight, 9);
+
+        vm.roll(block.number + 50400);
+        assertGt(block.number, governor.proposalDeadline(proposalId));
+        assertEq(uint8(governor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+        vm.prank(admin);
+        governor.queue(targets, values, calldatas, keccak256(bytes("")));
+        vm.warp(block.timestamp + 172800);
+        governor.execute(targets, values, calldatas, keccak256(bytes("")));
+
+        assertEq(collection.balanceOf(tombHolder), 1);
+        assertEq(collection.tokenURI(1), "https://test.com");
+    }
+
+    function test_FlowAggregate() external {
+        vm.prank(admin);
+        registry.registerParentCollection(
+            address(aeon),
+            address(indexMarker),
+            address(tombGovernorImplementation),
+            1,
+            50400,
+            172800,
+            1,
+            0,
+            false,
+            true,
+            10
+        );
+
+        vm.prank(tombHolder);
+        registry.createRecoveryCollectionForParentToken(address(aeon), 0, address(indexMarker));
+
+        RecoveryRegistry.RecoveryCollectionAddresses memory addresses =
+            registry.getRecoveryAddressesForParentToken(address(aeon), 0);
+        RecoveryCollection collection = RecoveryCollection(addresses.collection);
+        RecoveryGovernor governor = RecoveryGovernor(addresses.governor);
+        RecoveryTreasury treasury = RecoveryTreasury(addresses.treasury);
+
+        address[] memory targets = new address[](1);
+        targets[0] = address(collection);
+        uint256[] memory values = new uint256[](1);
+        bytes[] memory calldatas = new bytes[](1);
+        calldatas[0] = abi.encodeWithSignature("safeMint(address,string)", tombHolder, "https://test.com");
+        vm.startPrank(tombHolder);
+        uint256 proposalId = governor.propose(targets, values, calldatas, "");
+        vm.roll(block.number + 2);
+        uint256[] memory tombTokenIds = new uint256[](2);
+        tombTokenIds[0] = 0;
+        tombTokenIds[1] = 1;
+
+        address[] memory governors = new address[](1);
+        governors[0] = address(governor);
+        uint256[] memory proposalIds = new uint256[](1);
+        proposalIds[0] = proposalId;
+        uint8[] memory supportVals = new uint8[](1);
+        supportVals[0] = uint8(GovernorCountingSimple.VoteType.For);
+        string[] memory reasons = new string[](1);
+        reasons[0] = "";
+        bytes[] memory paramVals = new bytes[](1);
+        paramVals[0] = abi.encode(tombContracts, tombTokenIds);
+
+        vm.expectEmit(true, false, false, false);
+        emit VoteCastWithParams(
+            tombHolder,
+            proposalId,
+            uint8(GovernorCountingSimple.VoteType.For),
+            12,
+            "",
+            abi.encode(tombContracts, tombTokenIds)
+        );
+        aggregator.votesWithReasonAndParams(governors, proposalIds, supportVals, reasons, paramVals);
+        vm.stopPrank();
+
+        vm.prank(voter);
+
+        vm.expectEmit(true, false, false, false);
+        emit VoteCast(voter, proposalId, uint8(GovernorCountingSimple.VoteType.For), 9, "");
+        aggregator.votes(governors, proposalIds, supportVals);
 
         vm.roll(block.number + 50400);
         assertGt(block.number, governor.proposalDeadline(proposalId));
