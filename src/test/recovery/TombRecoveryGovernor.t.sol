@@ -15,6 +15,7 @@ import {RecoveryTreasury} from "recovery-protocol/governance/RecoveryTreasury.so
 
 import {MockOwnable721} from "../utils/MockOwnable721.sol";
 import {TombRecoveryGovernor} from "../../recovery/TombRecoveryGovernor.sol";
+import {RecoveryVoteAggregator} from "../../recovery/RecoveryVoteAggregator.sol";
 import {IndexMarkerV2} from "../../IndexMarkerV2.sol";
 
 contract TombRecoveryGovernorTest is Test, EIP712Upgradeable {
@@ -51,11 +52,11 @@ contract TombRecoveryGovernorTest is Test, EIP712Upgradeable {
             )
         );
 
-        tombGovernorImplementation = new TombRecoveryGovernor(address(indexMarker));
-
         address collectionImpl = address(new RecoveryCollection());
         address governorImpl = address(new RecoveryGovernor());
         address treasuryImpl = address(new RecoveryTreasury());
+        address aggregatorImpl = address(new RecoveryVoteAggregator());
+        tombGovernorImplementation = new TombRecoveryGovernor(address(indexMarker), aggregatorImpl);
         address registryImpl = address(new RecoveryRegistry(collectionImpl, governorImpl, treasuryImpl));
 
         registry = RecoveryRegistry(
@@ -113,10 +114,8 @@ contract TombRecoveryGovernorTest is Test, EIP712Upgradeable {
         vm.prank(tombHolder);
         registry.createRecoveryCollectionForParentToken(address(aeon), 0, address(indexMarker));
 
-        RecoveryRegistry.RecoveryCollectionAddresses memory addresses = registry.getRecoveryAddressesForParentToken(
-            address(aeon),
-            0
-        );
+        RecoveryRegistry.RecoveryCollectionAddresses memory addresses =
+            registry.getRecoveryAddressesForParentToken(address(aeon), 0);
         RecoveryCollection collection = RecoveryCollection(addresses.collection);
         RecoveryGovernor governor = RecoveryGovernor(addresses.governor);
         RecoveryTreasury treasury = RecoveryTreasury(addresses.treasury);
@@ -135,10 +134,7 @@ contract TombRecoveryGovernorTest is Test, EIP712Upgradeable {
         tombTokenIds[0] = 0;
         tombTokenIds[1] = 1;
         uint256 parentOwnerWeight = governor.castVoteWithReasonAndParams(
-            proposalId,
-            uint8(GovernorCountingSimple.VoteType.For),
-            "",
-            abi.encode(tombContracts, tombTokenIds)
+            proposalId, uint8(GovernorCountingSimple.VoteType.For), "", abi.encode(tombContracts, tombTokenIds)
         );
         assertEq(parentOwnerWeight, 12); // 10 from parent tomb + 1 other tomb + 1 index marker
         vm.stopPrank();

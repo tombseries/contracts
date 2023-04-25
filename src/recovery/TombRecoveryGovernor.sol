@@ -21,15 +21,15 @@ contract TombRecoveryGovernor is RecoveryGovernor {
         _;
     }
 
-    function castVoteOnBehalfOf(uint256 proposalId, address account, uint8 support) external onlyVoteAggregator {
-        return _castVote(proposalId, account, support, "");
+    function castVoteOnBehalfOf(uint256 proposalId, address account, uint8 support) public onlyVoteAggregator {
+        _castVote(proposalId, account, support, "");
     }
 
     function castVoteOnBehalfOfWithReason(uint256 proposalId, address account, uint8 support, string memory reason)
-        external
+        public
         onlyVoteAggregator
     {
-        return _castVote(proposalId, account, support, reason);
+        _castVote(proposalId, account, support, reason);
     }
 
     function castVoteOnBehalfOfWithReasonAndParams(
@@ -38,8 +38,8 @@ contract TombRecoveryGovernor is RecoveryGovernor {
         uint8 support,
         string memory reason,
         bytes memory params
-    ) external onlyVoteAggregator {
-        return _castVote(proposalId, account, support, reason, params);
+    ) public onlyVoteAggregator {
+        _castVote(proposalId, account, support, reason, params);
     }
 
     function _castVote(uint256 proposalId, address account, uint8 support, string memory reason, bytes memory params)
